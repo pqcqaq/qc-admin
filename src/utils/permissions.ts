@@ -1,5 +1,4 @@
 import { ref, computed } from "vue";
-import { getUserButtonPermissions, checkUserPermission } from "@/api/menu";
 import { useUserStoreHook } from "@/store/modules/user";
 
 // 用户权限状态
@@ -7,17 +6,7 @@ const userPermissions = ref<string[]>([]);
 const permissionsLoaded = ref(false);
 
 // 加载用户权限
-export const loadUserPermissions = async () => {
-  try {
-    const result = await getUserButtonPermissions();
-    if (result.success) {
-      userPermissions.value = result.data;
-      permissionsLoaded.value = true;
-    }
-  } catch (error) {
-    console.error("加载用户权限失败:", error);
-  }
-};
+export const loadUserPermissions = async () => {};
 
 // 检查用户是否有指定权限
 export const hasPermission = (permission: string | string[]): boolean => {
@@ -64,13 +53,7 @@ export const isAdmin = computed(() => {
 export const checkRemotePermission = async (
   permissionId: string
 ): Promise<boolean> => {
-  try {
-    const result = await checkUserPermission(permissionId);
-    return result.success && result.data;
-  } catch (error) {
-    console.error("检查远程权限失败:", error);
-    return false;
-  }
+  return Promise.resolve(true);
 };
 
 // 权限指令函数

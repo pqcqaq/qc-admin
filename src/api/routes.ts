@@ -1,5 +1,5 @@
 import { http } from "@/utils/http";
-import { getUserMenus, getAllScopes } from "./menu";
+import { getUserMenuTree, getAllScopes } from "./menu";
 
 type Result = {
   success: boolean;
@@ -8,7 +8,7 @@ type Result = {
 
 // 获取动态路由 - 从后端用户菜单权限
 export const getAsyncRoutes = () => {
-  return getUserMenus();
+  return getUserMenuTree();
 };
 
 // 保留原有的mock接口作为备用
