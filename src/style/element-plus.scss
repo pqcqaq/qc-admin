@@ -187,3 +187,40 @@
     background: rgb(199 201 203); /* 滑块hover颜色 */
   }
 }
+
+// 修复搜索栏自适应宽度问题
+
+.el-select {
+  width: 100%;
+}
+
+.el-form {
+  display: flex;
+
+  // 当容器宽度小于 768px 时自动换行
+  flex-wrap: nowrap;
+  gap: 16px;
+
+  @media (width <= 768px) {
+    flex-wrap: wrap;
+  }
+
+  // 当表单项过多时也自动换行（超过4个表单项）
+  &:has(.el-form-item:nth-child(5)) {
+    flex-wrap: wrap;
+  }
+}
+
+.el-form-item {
+  flex: 1;
+  min-width: 200px; // 设置最小宽度，防止过度压缩
+
+  // 在小屏幕上占满宽度
+  @media (width <= 768px) {
+    flex: 1 1 100%;
+  }
+}
+
+.el-form-item__content {
+  width: 100%;
+}
