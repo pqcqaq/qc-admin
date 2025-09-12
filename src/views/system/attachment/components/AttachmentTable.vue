@@ -51,7 +51,7 @@
         查看
       </el-button>
       <el-popconfirm
-        :title="`是否确认删除文件${row.originalFilename}?`"
+        :title="`是否确认删除文件${row.filename}?`"
         @confirm="handleDelete(row)"
       >
         <template #reference>
