@@ -448,10 +448,107 @@ export const getUserRoles = (userId: string) => {
 };
 
 /** 获取拥有指定角色的用户 */
-export const getRoleUsers = (roleId: string) => {
-  return http.request<{ success: boolean; data: any[] }>(
+export const getRoleUsers = (roleId: string, data?: object) => {
+  return http.request<{
+    success: boolean;
+    data: any[];
+    pagination?: Pagination;
+  }>("get", `/api/rbac/user-roles/roles/${roleId}/users`, { params: data });
+};
+
+/** 获取拥有指定角色的用户带分页 */
+export const getRoleUsersWithPagination = (roleId: string, data?: object) => {
+  return http.request<{
+    success: boolean;
+    data: any[];
+    pagination?: Pagination;
+  }>("get", `/api/rbac/roles/${roleId}/users`, { params: data });
+};
+
+/** 获取角色树形结构 */
+export const getRoleTree = () => {
+  return http.request<{ success: boolean; data: Role[] }>(
     "get",
-    `/api/rbac/user-roles/roles/${roleId}/users`
+    "/api/rbac/roles/tree"
+  );
+};
+
+/** 获取角色详细信息(包含继承的权限信息) */
+export const getRoleWithPermissions = (roleId: string) => {
+  return http.request<{
+    success: boolean;
+    data: {
+      role: Role;
+      directPermissions: Permission[];
+      inheritedPermissions: { permission: Permission; fromRole: Role }[];
+      allPermissions: Permission[];
+    };
+  }>("get", `/api/rbac/roles/${roleId}/permissions/detailed`);
+};
+
+/** 创建子角色 */
+export const createChildRole = (
+  parentRoleId: string,
+  data: CreateRoleRequest
+) => {
+  return http.request<RoleResult>(
+    "post",
+    `/api/rbac/roles/${parentRoleId}/children`,
+    {
+      data
+    }
+  );
+};
+
+/** 解除父角色依赖 */
+export const removeParentRole = (roleId: string, parentRoleId: string) => {
+  return http.request<any>(
+    "delete",
+    `/api/rbac/roles/${roleId}/parents/${parentRoleId}`
+  );
+};
+
+/** 添加父角色依赖 */
+export const addParentRole = (roleId: string, parentRoleId: string) => {
+  return http.request<any>(
+    "post",
+    `/api/rbac/roles/${roleId}/parents/${parentRoleId}`
+  );
+};
+
+/** 获取可分配的权限(排除已有的直接权限和继承权限) */
+export const getAssignablePermissions = (roleId: string) => {
+  return http.request<{ success: boolean; data: Permission[] }>(
+    "get",
+    `/api/rbac/roles/${roleId}/assignable-permissions`
+  );
+};
+
+/** 批量分配用户到角色 */
+export const batchAssignUsersToRole = (
+  roleId: string,
+  data: { userIds: string[] }
+) => {
+  return http.request<any>(
+    "post",
+    `/api/rbac/roles/${roleId}/users/batch-assign`,
+    {
+      data
+    }
+  );
+};
+
+/** 批量从角色移除用户 */
+export const batchRemoveUsersFromRole = (
+  roleId: string,
+  data: { userIds: string[] }
+) => {
+  return http.request<any>(
+    "post",
+    `/api/rbac/roles/${roleId}/users/batch-remove`,
+    {
+      data
+    }
   );
 };
 

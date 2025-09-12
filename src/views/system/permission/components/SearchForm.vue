@@ -23,7 +23,7 @@
       />
     </el-form-item>
 
-    <el-form-item label="权限域：" prop="scopeId">
+    <!-- <el-form-item label="权限域：" prop="scopeId">
       <el-select
         v-model="searchForm.scopeId"
         placeholder="请选择权限域"
@@ -37,7 +37,7 @@
           :value="scope.id"
         />
       </el-select>
-    </el-form-item>
+    </el-form-item> -->
 
     <el-form-item>
       <el-button

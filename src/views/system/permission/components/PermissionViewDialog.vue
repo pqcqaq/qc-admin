@@ -10,12 +10,12 @@
       <el-descriptions-item label="操作类型">
         <el-tag type="primary">{{ permissionData.action }}</el-tag>
       </el-descriptions-item>
-      <el-descriptions-item label="权限域">
+      <!-- <el-descriptions-item label="权限域">
         <el-tag v-if="permissionData.scope" type="success">
           {{ permissionData.scope.name }}
         </el-tag>
         <span v-else class="text-gray-400">-</span>
-      </el-descriptions-item>
+      </el-descriptions-item> -->
       <el-descriptions-item label="权限描述" :span="2">
         {{ permissionData.description || "-" }}
       </el-descriptions-item>

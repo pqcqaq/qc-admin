@@ -114,6 +114,18 @@ const columns: TableColumnList = [
     }
   },
   {
+    label: "角色",
+    prop: "roles",
+    minWidth: 200,
+    cellRenderer: ({ row }) => {
+      return row.roles?.map(role => (
+        <ElTag type="info" key={role} style="margin-right: 4px;">
+          {role}
+        </ElTag>
+      ));
+    }
+  },
+  {
     label: "状态",
     prop: "status",
     minWidth: 100,
