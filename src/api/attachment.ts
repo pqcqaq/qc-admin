@@ -75,52 +75,47 @@ export type UploadConfirmResult = {
 
 /** 获取附件列表 */
 export const getAttachmentList = (data?: object) => {
-  return http.request<AttachmentListResult>("get", "/api/attachments", {
+  return http.get<AttachmentListResult, object>("/api/attachments", {
     params: data
   });
 };
 
 /** 获取附件分页列表 */
 export const getAttachmentListWithPagination = (data?: object) => {
-  return http.request<AttachmentListResult>(
-    "get",
-    "/api/attachments/paginated",
-    {
-      params: data
-    }
-  );
+  return http.get<AttachmentListResult, object>("/api/attachments/page", {
+    params: data
+  });
 };
 
 /** 获取单个附件 */
 export const getAttachment = (id: string) => {
-  return http.request<AttachmentResult>("get", `/api/attachments/${id}`);
+  return http.get<AttachmentResult, object>(`/api/attachments/${id}`);
 };
 
 /** 获取附件URL */
 export const getAttachmentURL = (id: string) => {
-  return http.request<{ success: boolean; data: { url: string } }>(
-    "get",
+  return http.get<{ success: boolean; data: { url: string } }, null>(
     `/api/attachments/${id}/url`
   );
 };
 
 /** 创建附件记录 */
 export const createAttachment = (data: object) => {
-  return http.request<AttachmentResult>("post", "/api/attachments", {
+  return http.post<AttachmentResult, object>("/api/attachments", {
     data
   });
 };
 
 /** 更新附件 */
 export const updateAttachment = (id: string, data: object) => {
-  return http.request<AttachmentResult>("put", `/api/attachments/${id}`, {
+  return http.put<AttachmentResult, object>(`/api/attachments/${id}`, {
     data
   });
 };
 
 /** 删除附件 */
 export const deleteAttachment = (id: string) => {
-  return http.request<any>("delete", `/api/attachments/${id}`);
+  return http.delete<null, any>(`/api/attachments/${id}`);
 };
 
 /** 准备上传 - 获取上传凭证 */
@@ -129,13 +124,16 @@ export const prepareUpload = (data: {
   contentType: string;
   size: number;
 }) => {
-  return http.request<UploadPrepareResult>(
-    "post",
-    "/api/attachments/prepare-upload",
+  return http.post<
+    UploadPrepareResult,
     {
-      data
+      filename: string;
+      contentType: string;
+      size: number;
     }
-  );
+  >("/api/attachments/prepare-upload", {
+    data
+  });
 };
 
 /** 确认上传完成 */
