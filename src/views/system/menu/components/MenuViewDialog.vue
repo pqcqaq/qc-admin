@@ -75,17 +75,14 @@
         <span v-else class="text-gray-400">无子菜单</span>
       </el-descriptions-item>
       <el-descriptions-item label="关联权限" :span="2">
-        <div
-          v-if="menuData.permissions && menuData.permissions.length > 0"
-          class="flex flex-wrap gap-1"
-        >
+        <div v-if="menuData.permission" class="flex flex-wrap gap-1">
           <el-tag
-            v-for="permission in menuData.permissions"
-            :key="permission.id"
+            v-if="menuData.permission"
+            :key="menuData.permission.id"
             size="small"
             type="success"
           >
-            {{ permission.name }}({{ permission.action }})
+            {{ menuData.permission.name }}({{ menuData.permission.action }})
           </el-tag>
         </div>
         <span v-else class="text-gray-400">暂无权限</span>

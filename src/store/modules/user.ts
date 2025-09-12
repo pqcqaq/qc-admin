@@ -15,7 +15,6 @@ import {
 } from "@/api/auth";
 import { useMultiTagsStoreHook } from "./multiTags";
 import { type DataInfo, setToken, removeToken, userKey } from "@/utils/auth";
-import { loadUserPermissions } from "@/utils/permissions";
 
 export const useUserStore = defineStore("pure-user", {
   state: (): userType => ({
@@ -100,13 +99,6 @@ export const useUserStore = defineStore("pure-user", {
                 permissions: data.data.user.permissions || []
               };
               setToken(tokenData);
-
-              // 登录成功后加载用户详细权限
-              try {
-                await loadUserPermissions();
-              } catch (error) {
-                console.warn("加载用户权限失败:", error);
-              }
             }
             resolve(data);
           })

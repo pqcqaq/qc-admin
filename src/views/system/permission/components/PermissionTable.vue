@@ -104,18 +104,18 @@ const columns: TableColumnList = [
     minWidth: 200,
     showOverflowTooltip: true
   },
-  {
-    label: "权限域",
-    prop: "scope",
-    minWidth: 150,
-    cellRenderer: ({ row }) => {
-      return row.scope ? (
-        <ElTag type="success">{row.scope.name}</ElTag>
-      ) : (
-        <span class="text-gray-400">-</span>
-      );
-    }
-  },
+  // {
+  //   label: "权限域",
+  //   prop: "scope",
+  //   minWidth: 150,
+  //   cellRenderer: ({ row }) => {
+  //     return row.scope ? (
+  //       <ElTag type="success">{row.scope.name}</ElTag>
+  //     ) : (
+  //       <span class="text-gray-400">-</span>
+  //     );
+  //   }
+  // },
   {
     label: "创建时间",
     prop: "createTime",

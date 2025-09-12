@@ -31,9 +31,12 @@
               style="width: 100%"
               @change="handleTypeChange"
             >
-              <el-option label="菜单" value="menu" />
-              <el-option label="页面" value="page" />
-              <el-option label="按钮" value="button" />
+              <el-option
+                v-for="option in typeOptions"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -80,6 +83,27 @@
         </el-col>
       </el-row>
 
+      <el-row :gutter="20">
+        <el-col :span="24">
+          <el-form-item label="关联权限" prop="permissionId">
+            <el-select
+              v-model="formData.permissionId"
+              placeholder="请选择关联的权限"
+              filterable
+              clearable
+              style="width: 100%"
+            >
+              <el-option
+                v-for="permission in permissionOptions"
+                :key="permission.id"
+                :label="`${permission.name} (${permission.action})`"
+                :value="permission.id"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
       <el-row v-if="formData.type !== 'button'" :gutter="20">
         <el-col :span="12">
           <el-form-item label="路径" prop="path">
@@ -110,8 +134,8 @@
         </el-col>
       </el-row>
 
-      <el-row v-if="formData.type !== 'button'" :gutter="20">
-        <el-col :span="12">
+      <el-row :gutter="20">
+        <el-col v-if="formData.type !== 'button'" :span="12">
           <el-form-item label="重定向" prop="redirect">
             <el-input
               v-model="formData.redirect"
@@ -120,11 +144,11 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="12">
+        <el-col :span="formData.type !== 'button' ? 12 : 24">
           <el-form-item label="父级菜单" prop="parentId">
             <el-tree-select
               v-model="formData.parentId"
-              :data="menuTreeOptions"
+              :data="filteredMenuTreeOptions"
               placeholder="请选择父级菜单"
               clearable
               check-strictly
@@ -178,7 +202,12 @@
 import { ref, reactive, computed, watch, onMounted } from "vue";
 import type { FormInstance, FormRules } from "element-plus";
 import { ElMessage } from "element-plus";
-import { getScopeTree, type Scope } from "@/api/rbac";
+import {
+  getScopeTree,
+  type Scope,
+  getAllPermissions,
+  type Permission
+} from "@/api/rbac";
 import { IconSelect } from "@/components/ReIcon";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 
@@ -204,6 +233,7 @@ const emit = defineEmits<{
 const ruleFormRef = ref<FormInstance>();
 const menuTreeOptions = ref<Scope[]>([]);
 const componentOptions = ref<{ label: string; value: string }[]>([]);
+const permissionOptions = ref<Permission[]>([]);
 
 const dialogVisible = computed({
   get() {
@@ -216,12 +246,58 @@ const dialogVisible = computed({
 
 const dialogTitle = computed(() => {
   if (props.type === "add") {
-    return props.parentMenu
-      ? `新增子菜单 - ${props.parentMenu.name}`
-      : "新增菜单";
+    if (props.parentMenu) {
+      if (props.parentMenu.type === "page") {
+        return `新增按钮 - ${props.parentMenu.name}`;
+      } else {
+        return `新增子菜单 - ${props.parentMenu.name}`;
+      }
+    }
+    return "新增菜单";
   }
   return "编辑菜单";
 });
+
+// 计算可选的类型选项
+const typeOptions = computed(() => {
+  if (props.parentMenu?.type === "page") {
+    // 如果父级是页面，只能添加按钮
+    return [{ label: "按钮", value: "button" }];
+  } else if (props.parentMenu?.type === "menu") {
+    // 如果父级是菜单，可以添加菜单或页面
+    return [
+      { label: "菜单", value: "menu" },
+      { label: "页面", value: "page" }
+    ];
+  } else {
+    // 顶级菜单，可以是菜单或页面
+    return [
+      { label: "菜单", value: "menu" },
+      { label: "页面", value: "page" }
+    ];
+  }
+});
+
+// 过滤后的菜单树选项（根据当前类型决定可选择的父级）
+const filteredMenuTreeOptions = computed(() => {
+  if (formData.type === "button") {
+    // 按钮只能选择菜单或页面作为父级
+    return filterMenuTree(menuTreeOptions.value, ["menu", "page"]);
+  } else {
+    // 菜单和页面可以选择菜单作为父级
+    return filterMenuTree(menuTreeOptions.value, ["menu"]);
+  }
+});
+
+// 递归过滤菜单树
+const filterMenuTree = (menus: Scope[], allowedTypes: string[]): Scope[] => {
+  return menus
+    .filter(menu => allowedTypes.includes(menu.type))
+    .map(menu => ({
+      ...menu,
+      children: menu.children ? filterMenuTree(menu.children, allowedTypes) : []
+    }));
+};
 
 const formData = reactive({
   name: "",
@@ -235,7 +311,8 @@ const formData = reactive({
   order: 0,
   hidden: false,
   disabled: false,
-  parentId: ""
+  parentId: "",
+  permissionId: ""
 });
 
 const formRules = reactive<FormRules>({
@@ -286,6 +363,16 @@ const getComponentOptions = () => {
   );
 };
 
+// 获取权限选项
+const getPermissionOptions = async () => {
+  try {
+    const response = await getAllPermissions();
+    permissionOptions.value = response.data || [];
+  } catch (error) {
+    console.error("获取权限列表失败:", error);
+  }
+};
+
 // 获取菜单树选项
 const getMenuTreeOptions = async () => {
   try {
@@ -302,15 +389,48 @@ const handleTypeChange = (type: string) => {
     formData.path = "";
     formData.component = "";
     formData.redirect = "";
+    // 按钮类型时，如果当前父级不是菜单或页面，则清空父级
+    if (formData.parentId) {
+      const parent = findMenuById(menuTreeOptions.value, formData.parentId);
+      if (parent && !["menu", "page"].includes(parent.type)) {
+        formData.parentId = "";
+      }
+    }
   } else {
     formData.action = "";
+    // 菜单和页面类型时，如果当前父级不是菜单，则清空父级
+    if (formData.parentId) {
+      const parent = findMenuById(menuTreeOptions.value, formData.parentId);
+      if (parent && parent.type !== "menu") {
+        formData.parentId = "";
+      }
+    }
   }
+};
+
+// 根据ID查找菜单项
+const findMenuById = (menus: Scope[], id: string): Scope | null => {
+  for (const menu of menus) {
+    if (menu.id === id) {
+      return menu;
+    }
+    if (menu.children) {
+      const found = findMenuById(menu.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
 };
 
 // 重置表单
 const resetForm = () => {
   formData.name = "";
-  formData.type = "menu";
+  // 根据父级菜单类型设置默认类型
+  if (props.parentMenu?.type === "page") {
+    formData.type = "button";
+  } else {
+    formData.type = "menu";
+  }
   formData.icon = "";
   formData.description = "";
   formData.action = "";
@@ -321,6 +441,7 @@ const resetForm = () => {
   formData.hidden = false;
   formData.disabled = false;
   formData.parentId = props.parentMenu?.id || "";
+  formData.permissionId = "";
 };
 
 // 填充表单数据
@@ -343,6 +464,7 @@ const fillFormData = () => {
     formData.hidden = props.menuData.hidden || false;
     formData.disabled = props.menuData.disabled || false;
     formData.parentId = props.menuData.parentId || "";
+    formData.permissionId = props.menuData.permission?.id || "";
   }
 };
 
@@ -352,6 +474,7 @@ watch(
   val => {
     if (val) {
       getMenuTreeOptions();
+      getPermissionOptions();
       if (props.type === "edit") {
         fillFormData();
       } else {
@@ -387,6 +510,7 @@ const handleClose = () => {
 onMounted(() => {
   getComponentOptions();
   getMenuTreeOptions();
+  getPermissionOptions();
 });
 </script>
 

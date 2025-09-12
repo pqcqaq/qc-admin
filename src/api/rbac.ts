@@ -156,7 +156,7 @@ export type Scope = {
   /** 子级权限域 */
   children?: Scope[];
   /** 关联的权限 */
-  permissions?: Permission[];
+  permission?: Permission;
   /** 创建时间 */
   createTime: string;
   /** 更新时间 */
@@ -188,6 +188,8 @@ export type CreateScopeRequest = {
   disabled: boolean;
   /** 父级ID */
   parentId?: string;
+  /** 关联的权限ID */
+  permissionId?: string;
 };
 
 export type UpdateScopeRequest = {
@@ -215,6 +217,8 @@ export type UpdateScopeRequest = {
   disabled?: boolean;
   /** 父级ID */
   parentId?: string;
+  /** 关联的权限ID */
+  permissionId?: string;
 };
 
 export type ScopeListResult = {

@@ -80,9 +80,9 @@ menus:
   pureMarkdown: Markdown
   pureEditor: 编辑器
   pureAbnormal: 异常页面
-  pureFourZeroFour: "404"
-  pureFourZeroOne: "403"
-  pureFive: "500"
+  pureFourZeroFour: '404'
+  pureFourZeroOne: '403'
+  pureFive: '500'
   pureComponents: 组件
   pureDialog: 函数式弹框
   pureDrawer: 函数式抽屉
@@ -238,3 +238,4 @@ login:
   purePassWordSureReg: 请输入确认密码
   purePassWordDifferentReg: 两次密码不一致!
   purePassWordUpdateReg: 修改密码成功
+  pureLoginError: 登录失败

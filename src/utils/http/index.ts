@@ -148,7 +148,7 @@ class PureHttp {
         // 关闭进度条动画
         NProgress.done();
         // 所有的响应异常 区分来源为取消请求/非取消请求
-        return Promise.reject($error);
+        return Promise.reject($error.response.data);
       }
     );
   }

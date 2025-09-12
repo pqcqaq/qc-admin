@@ -80,9 +80,9 @@ menus:
   pureMarkdown: Markdown
   pureEditor: Editor
   pureAbnormal: Abnormal Page
-  pureFourZeroFour: "404"
-  pureFourZeroOne: "403"
-  pureFive: "500"
+  pureFourZeroFour: '404'
+  pureFourZeroOne: '403'
+  pureFive: '500'
   pureComponents: Components
   pureDialog: Dialog
   pureDrawer: Drawer
@@ -201,7 +201,10 @@ login:
   purePassword: Password
   pureVerifyCode: VerifyCode
   pureRemember: days no need to login
-  pureRememberInfo: After checking and logging in, will automatically log in to the system without entering your username and password within the specified number of days.
+  pureRememberInfo: >-
+    After checking and logging in, will automatically log in to the system
+    without entering your username and password within the specified number of
+    days.
   pureSure: Sure Password
   pureForget: Forget Password?
   pureLogin: Login
@@ -238,3 +241,4 @@ login:
   purePassWordSureReg: Please enter confirm password
   purePassWordDifferentReg: The two passwords do not match!
   purePassWordUpdateReg: Password has been updated
+  pureLoginError: Login failed

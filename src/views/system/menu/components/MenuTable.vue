@@ -138,14 +138,14 @@
               编辑
             </el-button>
             <el-button
-              v-if="row.type === 'menu'"
+              v-if="row.type === 'menu' || row.type === 'page'"
               link
               type="success"
               size="small"
               @click="handleAddChild(row)"
             >
               <el-icon class="mr-1"><Plus /></el-icon>
-              添加子菜单
+              {{ row.type === "menu" ? "添加子菜单" : "添加按钮" }}
             </el-button>
             <el-button link type="info" size="small" @click="handleView(row)">
               <el-icon class="mr-1"><View /></el-icon>
@@ -313,7 +313,7 @@ const handleAddChild = (row: Scope) => {
 
         td {
           border-bottom: 1px solid var(--el-border-color-lighter);
-          padding: 12px 0;
+          padding: 8px 0;
         }
       }
     }
@@ -352,10 +352,11 @@ const handleAddChild = (row: Scope) => {
   display: flex;
   align-items: center;
   position: relative;
+  height: 32px;
 
   .menu-icon {
-    margin-right: 8px;
-    font-size: 16px;
+    margin-right: 6px;
+    font-size: 14px;
     color: var(--el-color-primary);
     transition: all 0.3s ease;
     flex-shrink: 0;
@@ -368,7 +369,7 @@ const handleAddChild = (row: Scope) => {
   .menu-text {
     font-weight: 500;
     color: var(--el-text-color-primary);
-    font-size: 14px;
+    font-size: 13px;
     transition: color 0.3s ease;
 
     &:hover {
@@ -398,7 +399,9 @@ const handleAddChild = (row: Scope) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  min-height: 32px;
+  justify-content: center;
 }
 
 .create-time {
@@ -411,12 +414,12 @@ const handleAddChild = (row: Scope) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 
   .el-button {
     margin: 0;
-    padding: 4px 8px;
+    padding: 2px 6px;
     font-size: 12px;
     border-radius: 4px;
     transition: all 0.3s ease;
