@@ -1,4 +1,5 @@
 import Axios, {
+  type ParamEncoder,
   type AxiosInstance,
   type AxiosRequestConfig,
   type CustomParamsSerializer
@@ -9,9 +10,12 @@ import type {
   PureHttpResponse,
   PureHttpRequestConfig
 } from "./types.d";
-import { stringify } from "qs";
+import { stringify, parse } from "qs";
 import NProgress from "../progress";
-import { getToken, formatToken } from "@/utils/auth";
+import {
+  getToken as getTokenCustom,
+  formatToken as formatTokenCustom
+} from "@/utils/auth";
 import { useUserStoreHook } from "@/store/modules/user";
 
 // 相关配置请参考：www.axios-js.com/zh-cn/docs/#axios-request-config-1
@@ -25,12 +29,40 @@ const defaultConfig: AxiosRequestConfig = {
   },
   // 数组格式参数序列化（https://github.com/axios/axios/issues/5142）
   paramsSerializer: {
+    encode: parse as unknown as ParamEncoder,
     serialize: stringify as unknown as CustomParamsSerializer
   }
 };
 
+type AxiosAdaptor = AxiosRequestConfig["adapter"];
+type PureHttpInitConfig = {
+  getToken?: () => {
+    /** token */
+    accessToken: string;
+    /** `accessToken`的过期时间（时间戳） */
+    expires: number;
+    /** 用于调用刷新accessToken的接口时所需的token */
+    refreshToken: string;
+    /** 头像 */
+    avatar?: string;
+    /** 用户名 */
+    username?: string;
+    /** 昵称 */
+    nickname?: string;
+    /** 当前登录用户的角色 */
+    roles?: Array<string>;
+    /** 当前登录用户的按钮级别权限 */
+    permissions?: Array<string>;
+  };
+  formatToken?: (token: string) => string;
+  adaptor?: AxiosAdaptor;
+  whiteList?: string[];
+  initConfig?: PureHttpRequestConfig;
+};
+
 class PureHttp {
-  constructor() {
+  constructor(config: PureHttpInitConfig) {
+    PureHttp.config = config;
     this.httpInterceptorsRequest();
     this.httpInterceptorsResponse();
   }
@@ -44,14 +76,26 @@ class PureHttp {
   /** 初始化配置对象 */
   private static initConfig: PureHttpRequestConfig = {};
 
+  /** Config */
+  private static config: PureHttpInitConfig = {};
+
   /** 保存当前`Axios`实例对象 */
-  private static axiosInstance: AxiosInstance = Axios.create(defaultConfig);
+  private static axiosInstance: AxiosInstance = Axios.create({
+    ...defaultConfig
+  });
+
+  public static setup() {
+    if (PureHttp.config.adaptor) {
+      PureHttp.axiosInstance.defaults.adapter = PureHttp.config.adaptor;
+    }
+  }
 
   /** 重连原始请求 */
   private static retryOriginalRequest(config: PureHttpRequestConfig) {
     return new Promise(resolve => {
       PureHttp.requests.push((token: string) => {
-        config.headers["Authorization"] = formatToken(token);
+        config.headers["Authorization"] =
+          PureHttp.config.formatToken && PureHttp.config.formatToken(token);
         resolve(config);
       });
     });
@@ -73,19 +117,11 @@ class PureHttp {
           return config;
         }
         /** 请求白名单，放置一些不需要`token`的接口（通过设置请求白名单，防止`token`过期后再请求造成的死循环问题） */
-        const whiteList = [
-          "/api/auth/refresh-token",
-          "/api/auth/login",
-          "/api/auth/phone-login",
-          "/api/auth/register",
-          "/api/auth/send-verify-code",
-          "/api/auth/verify-code",
-          "/api/auth/reset-password"
-        ];
-        return whiteList.some(url => config.url.endsWith(url))
+        return PureHttp.config.whiteList?.some(url => config.url.endsWith(url))
           ? config
           : new Promise(resolve => {
-              const data = getToken();
+              const data =
+                PureHttp.config.getToken && PureHttp.config.getToken();
               if (data) {
                 const now = new Date().getTime();
                 const expired = parseInt(data.expires) - now <= 0;
@@ -97,7 +133,9 @@ class PureHttp {
                       .handRefreshToken({ refreshToken: data.refreshToken })
                       .then(res => {
                         const token = res.data.token;
-                        config.headers["Authorization"] = formatToken(token);
+                        config.headers["Authorization"] =
+                          PureHttp.config.formatToken &&
+                          PureHttp.config.formatToken(token);
                         PureHttp.requests.forEach(cb => cb(token));
                         PureHttp.requests = [];
                       })
@@ -107,9 +145,9 @@ class PureHttp {
                   }
                   resolve(PureHttp.retryOriginalRequest(config));
                 } else {
-                  config.headers["Authorization"] = formatToken(
-                    data.accessToken
-                  );
+                  config.headers["Authorization"] =
+                    PureHttp.config.formatToken &&
+                    PureHttp.config.formatToken(data.accessToken);
                   resolve(config);
                 }
               } else {
@@ -215,6 +253,28 @@ class PureHttp {
   ): Promise<T> {
     return this.request<T>("delete", url, params, config);
   }
+
+  /** 单独抽离的`patch`工具函数 */
+  public patch<T, P>(
+    url: string,
+    params?: AxiosRequestConfig<P>,
+    config?: PureHttpRequestConfig
+  ): Promise<T> {
+    return this.request<T>("patch", url, params, config);
+  }
 }
 
-export const http = new PureHttp();
+export const http = new PureHttp({
+  getToken: getTokenCustom,
+  formatToken: formatTokenCustom,
+  whiteList: [
+    "/api/auth/refresh-token",
+    "/api/auth/login",
+    "/api/auth/phone-login",
+    "/api/auth/register",
+    "/api/auth/send-verify-code",
+    "/api/auth/verify-code",
+    "/api/auth/reset-password"
+  ]
+});
+PureHttp.setup();

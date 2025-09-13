@@ -42,7 +42,7 @@
         </el-col>
       </el-row>
 
-      <el-row :gutter="20">
+      <el-row v-if="formData.type !== 'button'" :gutter="20">
         <el-col :span="12">
           <el-form-item label="图标" prop="icon">
             <IconSelect v-model="formData.icon" />
@@ -171,7 +171,7 @@
         </el-col>
       </el-row>
 
-      <el-row :gutter="20">
+      <el-row v-if="formData.type !== 'button'" :gutter="20">
         <el-col :span="12">
           <el-form-item label="是否隐藏">
             <el-switch v-model="formData.hidden" />

@@ -123,9 +123,9 @@ export function removeToken() {
 }
 
 /** 格式化token（jwt格式） */
-export const formatToken = (token: string): string => {
+export function formatToken(token: string): string {
   return "Bearer " + token;
-};
+}
 
 /** 是否有按钮级别的权限（根据登录接口返回的`permissions`字段进行判断）*/
 export const hasPerms = (value: string | Array<string>): boolean => {

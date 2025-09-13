@@ -44,4 +44,15 @@ export default class PureHttp {
     params?: P,
     config?: PureHttpRequestConfig
   ): Promise<T>;
+  put<T, P>(
+    url: string,
+    params?: P,
+    config?: PureHttpRequestConfig
+  ): Promise<T>;
+  delete<T, P>(
+    url: string,
+    params?: P,
+    config?: PureHttpRequestConfig
+  ): Promise<T>;
+  static setup(): void;
 }

@@ -286,7 +286,7 @@ const handleAddChild = (row: Scope) => {
 .menu-table-container {
   background: #fff;
   border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  // box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   overflow: hidden;
 
   .menu-tree-table {
@@ -305,11 +305,11 @@ const handleAddChild = (row: Scope) => {
 
     :deep(.el-table__body) {
       tr {
-        &:hover {
-          background-color: var(--el-color-primary-light-9) !important;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
+        // &:hover {
+        //   background-color: var(--el-color-primary-light-9) !important;
+        //   transform: translateY(-1px);
+        //   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        // }
 
         td {
           border-bottom: 1px solid var(--el-border-color-lighter);
@@ -429,10 +429,10 @@ const handleAddChild = (row: Scope) => {
       font-size: 12px;
     }
 
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
+    // &:hover {
+    //   transform: translateY(-1px);
+    //   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    // }
   }
 }
 

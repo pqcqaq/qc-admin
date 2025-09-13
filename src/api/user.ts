@@ -15,6 +15,10 @@ export type User = {
   createTime?: string;
   /** 更新时间 */
   updateTime?: string;
+  /** 头像ID */
+  avatarId?: string;
+  /** 头像URL */
+  avatar?: string;
 };
 
 export type Pagination = {

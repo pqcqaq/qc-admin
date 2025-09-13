@@ -7,6 +7,18 @@
     @close="handleClose"
   >
     <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
+      <!-- 头像 -->
+      <el-form-item label="头像">
+        <UploadFormItem
+          v-model="form.avatarId"
+          :url="form.avatar"
+          type="avatar"
+          :limit="1"
+          :auto-upload="true"
+          placeholder="上传头像"
+          :tip="'建议上传尺寸 512x512px 的图片，支持 jpg/png 格式，大小不超过 2MB'"
+        />
+      </el-form-item>
       <el-form-item label="用户名" prop="name">
         <el-input v-model="form.name" placeholder="请输入用户名" />
       </el-form-item>
@@ -47,6 +59,7 @@
 import { ref, reactive, nextTick, computed, watch } from "vue";
 import { type FormInstance } from "element-plus";
 import type { User } from "@/api/user";
+import UploadFormItem from "@/components/Upload/UploadFormItem.vue";
 
 interface UserFormData {
   id: string;
@@ -54,6 +67,8 @@ interface UserFormData {
   age?: number;
   sex: string;
   status: string;
+  avatarId?: string;
+  avatar: string;
 }
 
 // 定义 props
@@ -88,7 +103,9 @@ const form = reactive<UserFormData>({
   name: "",
   age: undefined,
   sex: "",
-  status: "active"
+  status: "active",
+  avatarId: undefined,
+  avatar: ""
 });
 
 // 表单验证规则
@@ -125,7 +142,9 @@ watch(
         name: newData.name,
         age: newData.age,
         sex: newData.sex,
-        status: newData.status || "active"
+        status: newData.status || "active",
+        avatarId: newData.avatarId,
+        avatar: newData.avatar
       });
     } else {
       resetForm();

@@ -17,8 +17,6 @@ export const useVerifyCode = (formData?: any) => {
     purpose = "login", // 新增用途参数，默认为登录
     formModel?: any // 新增表单数据参数
   ) => {
-    console.log("验证码发送开始:", { formEl, props, time, purpose, formModel });
-
     if (!formEl) {
       console.error("表单实例不存在");
       return;
@@ -45,12 +43,6 @@ export const useVerifyCode = (formData?: any) => {
           return;
         }
 
-        console.log("发送验证码请求:", {
-          senderType: "phone",
-          purpose: purpose,
-          identifier: phoneValue
-        });
-
         // 调用发送验证码接口
         sendVerifyCodeApi({
           senderType: "phone",
@@ -58,7 +50,6 @@ export const useVerifyCode = (formData?: any) => {
           identifier: phoneValue
         })
           .then(res => {
-            console.log("验证码发送响应:", res);
             if (res.success) {
               message("验证码发送成功", { type: "success" });
 

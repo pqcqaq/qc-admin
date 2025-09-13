@@ -90,6 +90,28 @@ const columns: TableColumnList = [
   //   prop: "id",
   //   minWidth: 100
   // },
+  // 头像
+  {
+    label: "头像",
+    prop: "avatar",
+    width: 80,
+    cellRenderer: ({ row }) => {
+      if (!row.avatar) {
+        return (
+          <ElTag type="info" effect="plain">
+            无
+          </ElTag>
+        );
+      }
+      return (
+        <img
+          src={row.avatar || "https://via.placeholder.com/40"}
+          alt="avatar"
+          style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"
+        />
+      );
+    }
+  },
   {
     label: "用户名",
     prop: "name",
