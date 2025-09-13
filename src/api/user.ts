@@ -115,3 +115,8 @@ export const updateUser = (id: string, data: object) => {
 export const deleteUser = (id: string) => {
   return http.request<any>("delete", `/api/users/${id}`);
 };
+
+/** 配置用户头像 */
+export const setUserAvatar = (id: string, attachmentId: string) => {
+  return http.request<any>("post", `/api/users/${id}/avatar/${attachmentId}`);
+};
