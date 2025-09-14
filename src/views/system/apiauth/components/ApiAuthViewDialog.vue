@@ -33,7 +33,7 @@
           <el-tag
             v-for="permission in data.permissions"
             :key="permission.id"
-            style=" margin-right: 4px;margin-bottom: 4px"
+            style="margin-bottom: 4px; margin-right: 4px"
             >{{ permission.action }}</el-tag
           >
         </div>
