@@ -132,11 +132,11 @@ const resetForm = () => {
   });
 };
 
-// 监听用户数据变化
+// 监听弹窗显示和用户数据变化
 watch(
-  () => props.userData,
-  newData => {
-    if (newData && props.type === "edit") {
+  [() => props.visible, () => props.userData],
+  ([newVisible, newData]) => {
+    if (newVisible && newData && props.type === "edit") {
       Object.assign(form, {
         id: newData.id,
         name: newData.name,
@@ -146,7 +146,7 @@ watch(
         avatarId: newData.avatarId,
         avatar: newData.avatar
       });
-    } else {
+    } else if (newVisible && props.type === "add") {
       resetForm();
     }
   },
