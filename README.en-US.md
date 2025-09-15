@@ -1,12 +1,12 @@
-<h1>vue-pure-admin Lite Edition（i18n version）</h1>
+<h1>qc-admin Lite Edition（i18n version）</h1>
 
-[![license](https://img.shields.io/github/license/pure-admin/vue-pure-admin.svg)](LICENSE)
+[![license](https://img.shields.io/github/license/qc-admin/qc-admin.svg)](LICENSE)
 
 **English** | [中文](./README.md)
 
 ## Introduce
 
-The simplified version is based on the shelf extracted from [vue-pure-admin](https://github.com/pure-admin/vue-pure-admin), which contains main functions and is more suitable for actual project development. The packaged size is introduced globally [element-plus](https://element-plus.org) is still below `2.3MB`, and the full version of the code will be permanently synchronized. After enabling `brotli` compression and `cdn` to replace the local library mode, the package size is less than `350kb`
+The simplified version is based on the shelf extracted from [qc-admin](https://github.com/qc-admin/qc-admin), which contains main functions and is more suitable for actual project development. The packaged size is introduced globally [element-plus](https://element-plus.org) is still below `2.3MB`, and the full version of the code will be permanently synchronized. After enabling `brotli` compression and `cdn` to replace the local library mode, the package size is less than `350kb`
 
 ## Supporting video
 
@@ -15,16 +15,16 @@ The simplified version is based on the shelf extracted from [vue-pure-admin](htt
 
 ## Nanny-level documents
 
-[Click me to view vue-pure-admin documentation](https://pure-admin.cn/)  
-[Click me to view @pureadmin/utils documentation](https://pure-admin-utils.netlify.app)
+[Click me to view qc-admin documentation](https://qc-admin.cn/)  
+[Click me to view @pureadmin/utils documentation](https://qc-admin-utils.netlify.app)
 
 ## Premium service
 
-[Click me to view details](https://pure-admin.cn/pages/service/)
+[Click me to view details](https://qc-admin.cn/pages/service/)
 
 ## Preview
 
-[Click me to view the preview station](https://pure-admin-thin.netlify.app/#/login)
+[Click me to view the preview station](https://qc-admin-thin.netlify.app/#/login)
 
 ## Maintainer
 
@@ -32,8 +32,8 @@ The simplified version is based on the shelf extracted from [vue-pure-admin](htt
 
 ## ⚠️ Attention
 
-The Lite version does not accept any issues and prs. If you have any questions, please go to the full version [issues](https://github.com/pure-admin/vue-pure-admin/issues/new/choose) to mention, thank you!
+The Lite version does not accept any issues and prs. If you have any questions, please go to the full version [issues](https://github.com/qc-admin/qc-admin/issues/new/choose) to mention, thank you!
 
 ## License
 
-[MIT © 2020-present, pure-admin](./LICENSE)
+[MIT © 2020-present, qc-admin](./LICENSE)
