@@ -59,9 +59,9 @@
           :selectable="isSelectable"
         />
 
-        <el-table-column prop="name" label="权限名称" min-width="150" />
+        <el-table-column prop="name" label="权限名称" min-width="100" />
 
-        <el-table-column prop="action" label="权限操作" width="120" />
+        <el-table-column prop="action" label="权限操作" width="220" />
 
         <el-table-column label="权限来源" width="150">
           <template #default="{ row }">
@@ -88,14 +88,7 @@
             </div>
           </template>
         </el-table-column>
-
-        <!-- <el-table-column label="权限域" width="120">
-          <template #default="{ row }">
-            <span>{{ row.scope?.name || "暂无" }}</span>
-          </template>
-        </el-table-column> -->
-
-        <el-table-column label="描述" min-width="200" show-overflow-tooltip>
+        <el-table-column label="描述" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">
             <span>{{ row.description || "暂无描述" }}</span>
           </template>
@@ -123,7 +116,16 @@
             >
               移除
             </el-button>
-            <span v-else class="inherited-tip"> 继承权限 </span>
+            <span v-else class="inherited-tip">
+              <el-tooltip
+                class="box-item"
+                effect="dark"
+                content="不可操作继承的权限"
+                placement="top-start"
+              >
+                继承权限
+              </el-tooltip>
+            </span>
           </template>
         </el-table-column>
       </el-table>
@@ -443,23 +445,23 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .role-permissions-view {
-  height: 100%;
   display: flex;
   flex-direction: column;
+  height: 100%;
   padding: 16px;
   overflow: hidden; // 防止内容溢出
 
   .view-header {
     display: flex;
+    flex-shrink: 0; // 防止header被压缩
     align-items: center;
     justify-content: space-between;
     margin-bottom: 16px;
-    flex-shrink: 0; // 防止header被压缩
 
     .header-left {
       display: flex;
-      align-items: center;
       gap: 8px;
+      align-items: center;
 
       .view-title {
         font-size: 16px;
@@ -480,8 +482,8 @@ onMounted(() => {
   }
 
   .search-bar {
-    margin-bottom: 16px;
     flex-shrink: 0; // 防止搜索栏被压缩
+    margin-bottom: 16px;
 
     .el-input {
       width: 100%;
@@ -491,8 +493,8 @@ onMounted(() => {
 
   .table-container {
     flex: 1;
-    overflow: hidden;
     min-height: 0; // 确保可以正确收缩
+    overflow: hidden;
 
     .permission-source {
       .source-tag {
@@ -501,19 +503,25 @@ onMounted(() => {
     }
 
     .inherited-tip {
-      color: var(--el-text-color-placeholder);
       font-size: 12px;
+      color: var(--el-text-color-placeholder);
     }
   }
 
   .pagination-container {
-    margin-top: 16px;
     display: flex;
-    justify-content: center;
     flex-shrink: 0; // 防止分页被压缩
+    justify-content: center;
+    margin-top: 16px;
   }
 
   .batch-toolbar {
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    margin-top: 16px;
     background: linear-gradient(
       135deg,
       var(--el-color-primary-light-9),
@@ -521,18 +529,12 @@ onMounted(() => {
     );
     border: 1px solid var(--el-color-primary-light-7);
     border-radius: 8px;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 16px;
-    z-index: 100;
+    box-shadow: 0 -2px 8px rgb(0 0 0 / 10%);
 
     .toolbar-left {
       font-size: 14px;
-      color: var(--el-color-primary);
       font-weight: 500;
+      color: var(--el-color-primary);
     }
 
     .toolbar-right {
