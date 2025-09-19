@@ -1,5 +1,6 @@
 import { http } from "@/utils/http";
 import type { Permission } from "./rbac";
+import type { Pagination } from ".";
 
 /** API认证记录 */
 export type APIAuth = {
@@ -25,22 +26,6 @@ export type APIAuth = {
   metadata?: Record<string, unknown>;
   // 所需权限
   permissions: Permission[];
-};
-
-/** 分页信息 */
-export type Pagination = {
-  /** 当前页码 */
-  page: number;
-  /** 每页数量 */
-  pageSize: number;
-  /** 总记录数 */
-  total: number;
-  /** 总页数 */
-  totalPages: number;
-  /** 是否有下一页 */
-  hasNext: boolean;
-  /** 是否有上一页 */
-  hasPrev: boolean;
 };
 
 /** 创建API认证请求参数 */
