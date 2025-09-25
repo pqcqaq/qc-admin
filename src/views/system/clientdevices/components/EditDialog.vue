@@ -27,19 +27,26 @@
           </el-form-item>
         </el-col>
       </el-row>
-
+      <el-form-item label="设备备注" prop="description">
+        <el-input
+          v-model="form.description"
+          placeholder="请输入设备备注"
+          type="textarea"
+          clearable
+        />
+      </el-form-item>
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="AccessToken过期时间" prop="accessTokenExpiry">
             <el-input-number
               v-model="form.accessTokenExpiry"
-              :min="60000"
+              :min="1000"
               :max="86400000"
               :step="60000"
               placeholder="毫秒"
               style="width: 100%"
             />
-            <div class="form-tip">单位：毫秒（最小1分钟，最大24小时）</div>
+            <div class="form-tip">单位：毫秒（最小1秒钟，最大24小时）</div>
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -96,9 +103,12 @@ import type {
 import RoleSelector from "@/components/Role/RoleSelector.vue";
 import { Arrayable } from "@vueuse/core";
 
+type DataType = ClientDevice;
+
 interface FormData {
   id?: string;
   name: string;
+  description: string;
   enabled: boolean;
   accessTokenExpiry: number;
   refreshTokenExpiry: number;
@@ -110,8 +120,9 @@ interface FormData {
 const props = defineProps<{
   visible: boolean;
   type: "add" | "edit";
-  data?: ClientDevice;
+  data?: DataType;
   loading: boolean;
+  getDetailApi: (data: { id: string }) => Promise<DataType>;
 }>();
 
 // 定义 emits
@@ -140,6 +151,7 @@ const dialogTitle = computed(() => {
 const form = reactive<FormData>({
   id: "",
   name: "",
+  description: "",
   enabled: true,
   accessTokenExpiry: 3600000, // 默认1小时
   refreshTokenExpiry: 86400000, // 默认24小时
@@ -163,7 +175,7 @@ const rules = {
     { required: true, message: "请输入AccessToken过期时间", trigger: "blur" },
     {
       type: "number",
-      min: 60000,
+      min: 1000,
       max: 86400000,
       message: "AccessToken过期时间在 1分钟 到 24小时 之间",
       trigger: "blur"
@@ -214,14 +226,8 @@ watch(
   [() => props.visible, () => props.data],
   ([newVisible, newData]) => {
     if (newVisible && newData && props.type === "edit") {
-      Object.assign(form, {
-        id: newData.id,
-        name: newData.name,
-        enabled: newData.enabled,
-        accessTokenExpiry: newData.accessTokenExpiry,
-        refreshTokenExpiry: newData.refreshTokenExpiry,
-        anonymous: newData.anonymous,
-        roles: newData.roles || []
+      props.getDetailApi({ id: newData.id }).then(res => {
+        Object.assign(form, res);
       });
     } else if (newVisible && props.type === "add") {
       resetForm();
@@ -267,6 +273,7 @@ const handleSubmit = async () => {
     const submitData = {
       name: form.name,
       enabled: form.enabled,
+      description: form.description,
       accessTokenExpiry: form.accessTokenExpiry,
       refreshTokenExpiry: form.refreshTokenExpiry,
       anonymous: form.anonymous,

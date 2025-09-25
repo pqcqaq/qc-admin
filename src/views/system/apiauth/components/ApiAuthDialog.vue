@@ -47,7 +47,7 @@
         />
       </el-form-item>
       <!-- 权限列表 -->
-      <el-form-item label="权限" prop="permissions">
+      <el-form-item v-if="!form.isPublic" label="权限" prop="permissions">
         <PermissionSelector
           v-model="form.permissions"
           placeholder="请选择权限"

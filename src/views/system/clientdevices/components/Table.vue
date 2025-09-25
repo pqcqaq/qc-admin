@@ -119,6 +119,12 @@ const columns: TableColumnList = [
     showOverflowTooltip: true
   },
   {
+    label: "设备备注",
+    prop: "description",
+    minWidth: 150,
+    showOverflowTooltip: true
+  },
+  {
     label: "设备标识",
     prop: "code",
     minWidth: 180,

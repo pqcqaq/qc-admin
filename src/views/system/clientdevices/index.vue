@@ -3,10 +3,10 @@
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <span class="font-medium"> 日志管理 </span>
+          <span class="font-medium"> 设备类型管理 </span>
           <div class="buttons">
             <el-button type="primary" :icon="Plus" @click="openDialog()">
-              新增日志
+              新增设备类型
             </el-button>
             <el-button type="success" :icon="Download" @click="handleExport">
               导出Excel
@@ -18,7 +18,7 @@
       <!-- 搜索表单组件 -->
       <SearchForm @search="handleSearch" @reset="handleReset" />
 
-      <!-- 日志表格组件 -->
+      <!-- 表格组件 -->
       <Table
         :data-list="dataList"
         :pagination="pagination"
@@ -37,6 +37,7 @@
       :type="dialogType"
       :data="currentRecord"
       :loading="submitLoading"
+      :get-detail-api="getDetailApi"
       @submit="handleSubmit"
     />
 
@@ -55,10 +56,27 @@ import {
   updateClientDevice as updateApi,
   deleteClientDevice as deleteApi,
   exportClientDevicesToExcel as exportApi,
+  getClientDevice as getByIdApi,
   type ClientDevice,
   type ClientDevicePageRequest
 } from "@/api/client_devices";
 import { SearchForm, Table, EditDialog, ViewDialog } from "./components";
+import { message } from "@/utils/message";
+
+const getDetailApi = async (data: { id: string }) => {
+  try {
+    loading.value = true;
+    const res = await getByIdApi(data.id);
+    if (!res.success) {
+      message("获取详情失败", {
+        type: "error"
+      });
+    }
+    return res.data;
+  } finally {
+    loading.value = false;
+  }
+};
 
 defineOptions({
   name: "LoggingManagement"
@@ -75,10 +93,10 @@ const currentRecord = ref<ClientDevice>();
 const searchParams = reactive<ClientDevicePageRequest>({
   name: "",
   code: "",
-  enabled: true,
-  anonymous: false,
-  order: "desc",
-  orderBy: "create_time",
+  enabled: undefined,
+  anonymous: undefined,
+  order: "",
+  orderBy: "",
   beginTime: "",
   endTime: ""
 });
@@ -95,7 +113,7 @@ const pagination = reactive({
   background: true
 });
 
-// 获取日志列表
+// 获取列表
 const getTableData = async () => {
   loading.value = true;
   try {
@@ -120,8 +138,8 @@ const getTableData = async () => {
     pagination.pageSize = response.pagination?.pageSize || 10;
     pagination.currentPage = response.pagination?.page || 1;
   } catch (error) {
-    console.error("获取日志列表失败:", error);
-    ElMessage.error("获取日志列表失败");
+    console.error("获取列表失败:", error);
+    ElMessage.error("获取列表失败");
   } finally {
     loading.value = false;
   }
@@ -175,37 +193,37 @@ const handleSubmit = async (formData: any) => {
   try {
     if (dialogType.value === "add") {
       await createApi(formData);
-      ElMessage.success("创建日志记录成功");
+      ElMessage.success("创建记录成功");
     } else {
       await updateApi(formData.id, formData);
-      ElMessage.success("更新日志记录成功");
+      ElMessage.success("更新记录成功");
     }
     dialogVisible.value = false;
     getTableData();
   } catch (error) {
-    console.error("保存日志记录失败:", error);
-    ElMessage.error("保存日志记录失败");
+    console.error("保存记录失败:", error);
+    ElMessage.error("保存记录失败");
   } finally {
     submitLoading.value = false;
   }
 };
 
-// 查看日志记录
+// 查看记录
 const handleView = (row: ClientDevice) => {
   viewData.value = { ...row };
   viewDialogVisible.value = true;
 };
 
-// 删除日志记录
+// 删除记录
 const handleDelete = async (row: ClientDevice) => {
   try {
     loading.value = true;
     await deleteApi(row.id);
-    ElMessage.success("删除日志记录成功");
+    ElMessage.success("删除记录成功");
     await getTableData();
   } catch (error) {
-    console.error("删除日志记录失败:", error);
-    ElMessage.error("删除日志记录失败");
+    console.error("删除记录失败:", error);
+    ElMessage.error("删除记录失败");
     loading.value = false;
   }
 };
@@ -235,7 +253,7 @@ const handleExport = async () => {
     const url = window.URL.createObjectURL(new Blob([response]));
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `日志记录_${new Date().getTime()}.xlsx`);
+    link.setAttribute("download", `记录_${new Date().getTime()}.xlsx`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -243,8 +261,8 @@ const handleExport = async () => {
 
     ElMessage.success("导出成功");
   } catch (error) {
-    console.error("导出日志记录失败:", error);
-    ElMessage.error("导出日志记录失败");
+    console.error("导出记录失败:", error);
+    ElMessage.error("导出记录失败");
   } finally {
     loading.value = false;
   }

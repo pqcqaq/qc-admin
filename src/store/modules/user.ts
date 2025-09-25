@@ -89,12 +89,12 @@ export const useUserStore = defineStore("pure-user", {
 
               // 保存Token（适配新的响应格式）
               const tokenData = {
-                accessToken: data.data.token,
-                refreshToken: data.data.token, // 如果后端没有单独的refreshToken，暂时使用同一个
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24小时后过期
+                accessToken: data.data.token.accessToken,
+                refreshToken: data.data.token.refreshToken, // 如果后端没有单独的refreshToken，暂时使用同一个
+                expires: data.data.token.accessExpiredIn, // 24小时后过期
                 username: data.data.user.name,
                 nickname: data.data.user.name,
-                avatar: "",
+                avatar: data.data.user.avatar,
                 roles: data.data.user.roles || [],
                 permissions: data.data.user.permissions || []
               };
@@ -125,14 +125,9 @@ export const useUserStore = defineStore("pure-user", {
             if (data) {
               // 适配新的响应格式
               const tokenData = {
-                accessToken: data.data.token,
-                refreshToken: data.data.token,
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24小时后过期
-                username: this.username,
-                nickname: this.nickname,
-                avatar: this.avatar,
-                roles: this.roles,
-                permissions: this.permissions
+                accessToken: data.data.token.accessToken,
+                refreshToken: data.data.token.refreshToken,
+                expires: data.data.token.accessExpiredIn // 24小时后过期
               };
               setToken(tokenData);
               resolve(data);

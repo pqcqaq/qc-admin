@@ -1,5 +1,12 @@
 import { http } from "@/utils/http";
 
+export type TokenInfo = {
+  accessToken: string;
+  refreshToken: string;
+  accessExpiredIn: number;
+  refreshExpiredIn: number;
+};
+
 export type UserResult = {
   success: boolean;
   data: {
@@ -18,9 +25,11 @@ export type UserResult = {
       roles: Array<any>;
       /** 按钮级别权限 */
       permissions: Array<any>;
+      /** 头像 */
+      avatar: string;
     };
     /** `token` */
-    token: string;
+    token: TokenInfo;
     /** 消息 */
     message: string;
   };
@@ -30,7 +39,7 @@ export type RefreshTokenResult = {
   success: boolean;
   data: {
     /** `token` */
-    token: string;
+    token: TokenInfo;
     /** 消息 */
     message: string;
   };
@@ -73,7 +82,9 @@ type ResultTable = {
 /** 登录 */
 export const getLogin = (data?: object) => {
   return http.request<UserResult>("post", "/api/auth/login", {
-    data
+    data: Object.assign(data, {
+      clientCode: import.meta.env.VITE_CLIENT_CODE
+    })
   });
 };
 
@@ -87,28 +98,36 @@ export const refreshTokenApi = (data?: object) => {
 /** 注册 */
 export const registerApi = (data?: object) => {
   return http.request<any>("post", "/api/auth/register", {
-    data
+    data: Object.assign(data, {
+      clientCode: import.meta.env.VITE_CLIENT_CODE
+    })
   });
 };
 
 /** 发送验证码 */
 export const sendVerifyCodeApi = (data?: object) => {
   return http.request<any>("post", "/api/auth/send-verify-code", {
-    data
+    data: Object.assign(data, {
+      clientCode: import.meta.env.VITE_CLIENT_CODE
+    })
   });
 };
 
 /** 验证验证码 */
 export const verifyCodeApi = (data?: object) => {
   return http.request<any>("post", "/api/auth/verify-code", {
-    data
+    data: Object.assign(data, {
+      clientCode: import.meta.env.VITE_CLIENT_CODE
+    })
   });
 };
 
 /** 重置密码 */
 export const resetPasswordApi = (data?: object) => {
   return http.request<any>("post", "/api/auth/reset-password", {
-    data
+    data: Object.assign(data, {
+      clientCode: import.meta.env.VITE_CLIENT_CODE
+    })
   });
 };
 

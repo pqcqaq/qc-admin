@@ -135,8 +135,8 @@ class PureHttp {
                         const token = res.data.token;
                         config.headers["Authorization"] =
                           PureHttp.config.formatToken &&
-                          PureHttp.config.formatToken(token);
-                        PureHttp.requests.forEach(cb => cb(token));
+                          PureHttp.config.formatToken(token.accessToken);
+                        PureHttp.requests.forEach(cb => cb(token.accessToken));
                         PureHttp.requests = [];
                       })
                       .finally(() => {

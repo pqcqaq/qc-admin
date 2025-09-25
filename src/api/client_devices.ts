@@ -23,6 +23,8 @@ export type ClientDevice = {
   name: string;
   /** 设备标识字符串(64位) */
   code: string;
+  /** 备注 */
+  description: string;
   /** 是否启用 */
   enabled: boolean;
   /** accessToken超时时间(ms) */
@@ -94,9 +96,9 @@ export type ClientDevicePageRequest = {
   /** 每页数量 */
   pageSize?: number;
   /** 排序方式 asc|desc */
-  order?: "asc" | "desc";
+  order?: "asc" | "desc" | "";
   /** 排序字段 */
-  orderBy?: "create_time" | "update_time" | "name";
+  orderBy?: "create_time" | "update_time" | "name" | "";
   /** 按名称模糊搜索 */
   name?: string;
   /** 按code精确搜索 */
