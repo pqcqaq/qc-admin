@@ -56,6 +56,18 @@
               @clear="handleSearch"
             />
           </el-form-item>
+          <!-- 是否公共 -->
+          <el-form-item label="公共权限">
+            <el-select
+              v-model="searchForm.isPublic"
+              placeholder="请选择"
+              clearable
+              style="width: 120px"
+            >
+              <el-option :label="'是'" :value="true" />
+              <el-option :label="'否'" :value="false" />
+            </el-select>
+          </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSearch">搜索</el-button>
             <el-button @click="resetSearch">重置</el-button>
@@ -83,6 +95,13 @@
             />
             <el-table-column prop="name" label="权限名称" />
             <el-table-column prop="action" label="权限操作" />
+            <!-- 是否公开 -->
+            <el-table-column
+              prop="isPublic"
+              label="公共权限"
+              width="100"
+              :formatter="row => (row.isPublic ? '是' : '否')"
+            />
             <el-table-column
               prop="description"
               label="描述"
@@ -153,12 +172,14 @@
       title="创建新权限"
       width="500px"
       :before-close="handleCreateClose"
+      class="create-dialog"
     >
       <el-form
         ref="createFormRef"
         :model="createForm"
         :rules="createRules"
         label-width="80px"
+        label-position="right"
       >
         <el-form-item label="权限名称" prop="name">
           <el-input v-model="createForm.name" placeholder="请输入权限名称" />
@@ -172,6 +193,16 @@
             type="textarea"
             :rows="3"
             placeholder="请输入权限描述"
+          />
+        </el-form-item>
+        <!-- 是否公共 -->
+        <el-form-item label="公共权限" prop="isPublic">
+          <el-switch
+            v-model="createForm.isPublic"
+            active-color="#13ce66"
+            inactive-color="#ff4949"
+            active-text="是"
+            inactive-text="否"
           />
         </el-form-item>
       </el-form>
@@ -234,14 +265,16 @@ const pagination = reactive({
 // 搜索表单
 const searchForm = reactive({
   name: "",
-  action: ""
+  action: "",
+  isPublic: null as boolean | null
 });
 
 // 创建表单
 const createForm = reactive<CreatePermissionRequest>({
   name: "",
   action: "",
-  description: ""
+  description: "",
+  isPublic: false
 });
 
 const createFormRef = ref();
@@ -603,5 +636,11 @@ onMounted(() => {
   font-size: 14px;
   color: #909399;
   text-align: center;
+}
+
+.create-dialog {
+  ::v-deep(.el-form-item) {
+    padding: 6px;
+  }
 }
 </style>

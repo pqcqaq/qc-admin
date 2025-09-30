@@ -38,6 +38,16 @@
           clearable
         />
       </el-form-item>
+      <!-- 是否为公共权限 -->
+      <el-form-item label="公共权限" prop="isPublic">
+        <el-switch
+          v-model="formData.isPublic"
+          active-color="#13ce66"
+          inactive-color="#ff4949"
+          active-text="是"
+          inactive-text="否"
+        />
+      </el-form-item>
 
       <!-- <el-form-item label="权限域" prop="scopeId">
         <el-select
@@ -114,7 +124,8 @@ const formData = reactive({
   name: "",
   action: "",
   description: "",
-  scopeId: ""
+  scopeId: "",
+  isPublic: false
 });
 
 const formRules = reactive<FormRules>({
@@ -147,6 +158,7 @@ const fillFormData = () => {
     formData.action = props.permissionData.action || "";
     formData.description = props.permissionData.description || "";
     formData.scopeId = props.permissionData.scope?.id || "";
+    formData.isPublic = props.permissionData.isPublic || false;
   }
 };
 

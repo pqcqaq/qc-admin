@@ -99,6 +99,18 @@ const columns: TableColumnList = [
     }
   },
   {
+    label: "公共权限",
+    prop: "isPublic",
+    minWidth: 50,
+    cellRenderer: ({ row }) => {
+      return row.isPublic ? (
+        <ElTag type="success">是</ElTag>
+      ) : (
+        <ElTag type="info">否</ElTag>
+      );
+    }
+  },
+  {
     label: "权限描述",
     prop: "description",
     minWidth: 200,

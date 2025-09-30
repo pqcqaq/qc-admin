@@ -17,6 +17,8 @@ export type Permission = {
   createTime: string;
   /** 更新时间 */
   updateTime: string;
+  /** 是否为公共权限 */
+  isPublic: boolean;
 };
 
 export type CreatePermissionRequest = {
@@ -28,6 +30,8 @@ export type CreatePermissionRequest = {
   description?: string;
   /** 权限域ID */
   scopeId?: string;
+  /** 是否为公共权限 */
+  isPublic?: boolean;
 };
 
 export type UpdatePermissionRequest = {
@@ -39,6 +43,8 @@ export type UpdatePermissionRequest = {
   description?: string;
   /** 权限域ID */
   scopeId?: string;
+  /** 是否为公共权限 */
+  isPublic?: boolean;
 };
 
 export type PermissionListResult = {
@@ -464,6 +470,7 @@ export const getRoleWithPermissions = (roleId: string) => {
     success: boolean;
     data: {
       role: Role;
+      publicPermissions: Permission[];
       directPermissions: Permission[];
       inheritedPermissions: { permission: Permission; fromRole: Role }[];
       allPermissions: Permission[];

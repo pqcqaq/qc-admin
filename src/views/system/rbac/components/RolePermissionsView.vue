@@ -82,6 +82,14 @@
               >
                 直接分配
               </el-tag>
+              <el-tag
+                v-else-if="row.source === 'public'"
+                size="small"
+                type="info"
+                class="source-tag"
+              >
+                公共权限
+              </el-tag>
               <el-tag v-else size="small" type="info" class="source-tag">
                 {{ row.source || "未知" }}
               </el-tag>
@@ -116,16 +124,22 @@
             >
               移除
             </el-button>
-            <span v-else class="inherited-tip">
-              <el-tooltip
-                class="box-item"
-                effect="dark"
-                content="不可操作继承的权限"
-                placement="top-start"
-              >
-                继承权限
-              </el-tooltip>
-            </span>
+            <template v-else>
+              <span v-if="row.source === 'inherit'" class="inherited-tip">
+                <el-tooltip
+                  class="box-item"
+                  effect="dark"
+                  content="不可操作继承的权限"
+                  placement="top-start"
+                >
+                  继承权限
+                </el-tooltip>
+              </span>
+              <span v-else-if="row.source === 'public'" class="inherited-tip">
+                公共权限
+              </span>
+              <span v-else class="inherited-tip">不可操作</span>
+            </template>
           </template>
         </el-table-column>
       </el-table>
@@ -180,19 +194,6 @@ import AddPermissionsDialog from "./AddPermissionsDialog.vue";
 interface RolePermission extends Permission {
   source?: string; // 权限来源：直接分配、角色继承
   sourceRole?: Role; // 来源角色
-}
-
-// 定义后端实际返回的数据结构
-interface DirectPermissionItem {
-  permission: Permission;
-  source: string; // "直接分配"
-  sourceRole: Role;
-}
-
-interface InheritedPermissionItem {
-  permission: Permission;
-  source: string; // "角色继承"
-  sourceRole: Role;
 }
 
 interface Props {
@@ -289,20 +290,27 @@ const loadData = async () => {
     if (props.selectedRole) {
       // 获取指定角色的权限详情
       const response = await getRoleWithPermissions(props.selectedRole.id);
-      const { directPermissions, inheritedPermissions } = response.data;
+      const { publicPermissions, directPermissions, inheritedPermissions } =
+        response.data;
 
       // 合并直接权限和继承权限
       const allPermissions: RolePermission[] = [
+        // 处理公共权限
+        ...(publicPermissions || []).map((item: any) => ({
+          ...item.permission,
+          source: "public",
+          sourceRole: null
+        })),
         // 处理直接权限
         ...(directPermissions || []).map((item: any) => ({
           ...item.permission,
-          source: item.source,
+          source: "direct",
           sourceRole: item.sourceRole
         })),
         // 处理继承权限
         ...(inheritedPermissions || []).map((item: any) => ({
           ...item.permission,
-          source: item.source,
+          source: "inherit",
           sourceRole: item.sourceRole
         }))
       ];

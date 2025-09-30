@@ -72,7 +72,8 @@ const onLogin = async (formEl: FormInstance | undefined) => {
         .loginByUsername({
           credentialType: "password",
           identifier: ruleForm.username,
-          secret: ruleForm.password
+          secret: ruleForm.password,
+          rememberMe: checked.value
         })
         .then(res => {
           if (res.success) {
@@ -247,20 +248,6 @@ watch(loginDay, value => {
                 <div class="w-full h-[20px] flex justify-between items-center">
                   <el-checkbox v-model="checked">
                     <span class="flex">
-                      <select
-                        v-model="loginDay"
-                        :style="{
-                          width: loginDay < 10 ? '10px' : '16px',
-                          outline: 'none',
-                          background: 'none',
-                          appearance: 'none',
-                          border: 'none'
-                        }"
-                      >
-                        <option value="1">1</option>
-                        <option value="7">7</option>
-                        <option value="30">30</option>
-                      </select>
                       {{ t("login.pureRemember") }}
                       <IconifyIconOffline
                         v-tippy="{

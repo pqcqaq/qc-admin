@@ -62,6 +62,13 @@
 
           <el-table-column prop="action" label="权限操作" width="120" />
 
+          <el-table-column
+            prop="isPublic"
+            label="公共权限"
+            width="100"
+            :formatter="row => (row.isPublic ? '是' : '否')"
+          />
+
           <el-table-column prop="scope.name" label="权限域" width="120" />
 
           <el-table-column
@@ -398,16 +405,16 @@ onMounted(() => {
   }
 
   .pagination-container {
-    margin-bottom: 16px;
     display: flex;
     justify-content: center;
+    margin-bottom: 16px;
   }
 
   .selected-permissions {
-    border: 1px solid var(--el-border-color);
-    border-radius: 4px;
     padding: 12px;
     background: var(--el-fill-color-lighter);
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
 
     .selected-title {
       margin-bottom: 8px;
@@ -425,7 +432,7 @@ onMounted(() => {
 
 .dialog-footer {
   display: flex;
-  justify-content: flex-end;
   gap: 12px;
+  justify-content: flex-end;
 }
 </style>
