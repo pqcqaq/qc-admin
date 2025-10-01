@@ -1,17 +1,14 @@
 <template>
-  <div class="role-permissions-view">
+  <div class="role-specific-permissions-view">
     <div class="view-header">
       <div class="header-left">
-        <span class="view-title">
-          {{ selectedRole ? `角色 "${selectedRole.name}" 的权限` : "所有权限" }}
-        </span>
+        <span class="view-title"> 角色 "{{ selectedRole.name }}" 的权限 </span>
         <span v-if="pagination.total" class="permission-count">
           ({{ pagination.total }} 个权限)
         </span>
       </div>
       <div class="header-right">
         <el-button
-          v-if="selectedRole"
           type="primary"
           :icon="Plus"
           size="small"
@@ -22,7 +19,7 @@
         <el-button
           :icon="Refresh"
           size="small"
-          :loading="loading"
+          :loading="actualLoading"
           @click="refreshData"
         >
           刷新
@@ -45,106 +42,123 @@
     </div>
 
     <div class="table-container">
-      <el-table
-        :data="permissionList"
-        :loading="loading"
-        stripe
-        height="100%"
-        @selection-change="handleSelectionChange"
-      >
-        <el-table-column
-          v-if="selectedRole"
-          type="selection"
-          width="55"
-          :selectable="isSelectable"
-        />
-
-        <el-table-column prop="name" label="权限名称" min-width="100" />
-
-        <el-table-column prop="action" label="权限操作" width="220" />
-
-        <el-table-column label="权限来源" width="150">
-          <template #default="{ row }">
-            <div class="permission-source">
-              <el-tag
-                v-if="row.source === 'inherit'"
-                size="small"
-                type="warning"
-                class="source-tag"
+      <ContextMenu @show="handlePermissionContextMenuShow">
+        <template #menu="{ close }">
+          <div v-if="currentContextPermission" class="context-menu-content">
+            <MenuGroup title="权限操作">
+              <MenuItem
+                :icon="View"
+                variant="primary"
+                @click="handleMenuCommand('view', close)"
               >
-                继承自 {{ row.sourceRole?.name }}
-              </el-tag>
-              <el-tag
-                v-else-if="row.source === 'direct'"
-                size="small"
-                type="success"
-                class="source-tag"
+                查看权限详情
+              </MenuItem>
+              <MenuItem
+                v-if="currentContextPermission.source === 'direct'"
+                :icon="Remove"
+                variant="danger"
+                @click="handleMenuCommand('remove', close)"
               >
-                直接分配
-              </el-tag>
-              <el-tag
-                v-else-if="row.source === 'public'"
-                size="small"
-                type="info"
-                class="source-tag"
-              >
-                公共权限
-              </el-tag>
-              <el-tag v-else size="small" type="info" class="source-tag">
-                {{ row.source || "未知" }}
-              </el-tag>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="描述" min-width="180" show-overflow-tooltip>
-          <template #default="{ row }">
-            <span>{{ row.description || "暂无描述" }}</span>
-          </template>
-        </el-table-column>
+                移除权限
+              </MenuItem>
+            </MenuGroup>
+          </div>
+        </template>
 
-        <el-table-column prop="createTime" label="分配时间" width="160">
-          <template #default="{ row }">
-            {{ formatTime(row.createTime) }}
-          </template>
-        </el-table-column>
-
-        <el-table-column
-          v-if="selectedRole"
-          label="操作"
-          width="120"
-          fixed="right"
+        <el-table
+          :data="permissionList"
+          :loading="actualLoading"
+          stripe
+          height="100%"
+          @selection-change="handleSelectionChange"
         >
-          <template #default="{ row }">
-            <el-button
-              v-if="row.source === 'direct'"
-              type="danger"
-              size="small"
-              text
-              @click="handleRemovePermission(row)"
-            >
-              移除
-            </el-button>
-            <template v-else>
-              <span v-if="row.source === 'inherit'" class="inherited-tip">
-                <el-tooltip
-                  class="box-item"
-                  effect="dark"
-                  content="不可操作继承的权限"
-                  placement="top-start"
-                >
-                  继承权限
-                </el-tooltip>
-              </span>
-              <span v-else-if="row.source === 'public'" class="inherited-tip">
-                公共权限
-              </span>
-              <span v-else class="inherited-tip">不可操作</span>
-            </template>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
+          <el-table-column
+            type="selection"
+            width="55"
+            :selectable="isSelectable"
+          />
 
+          <el-table-column prop="name" label="权限名称" min-width="100" />
+
+          <el-table-column prop="action" label="权限操作" width="220" />
+
+          <el-table-column label="权限来源" width="150">
+            <template #default="{ row }">
+              <div class="permission-source">
+                <el-tag
+                  v-if="row.source === 'inherit'"
+                  size="small"
+                  type="warning"
+                  class="source-tag"
+                >
+                  继承自 {{ row.sourceRole?.name }}
+                </el-tag>
+                <el-tag
+                  v-else-if="row.source === 'direct'"
+                  size="small"
+                  type="success"
+                  class="source-tag"
+                >
+                  直接分配
+                </el-tag>
+                <el-tag
+                  v-else-if="row.source === 'public'"
+                  size="small"
+                  type="info"
+                  class="source-tag"
+                >
+                  公共权限
+                </el-tag>
+                <el-tag v-else size="small" type="info" class="source-tag">
+                  {{ row.source || "未知" }}
+                </el-tag>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="描述" min-width="180" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span>{{ row.description || "暂无描述" }}</span>
+            </template>
+          </el-table-column>
+
+          <el-table-column prop="createTime" label="分配时间" width="160">
+            <template #default="{ row }">
+              {{ formatTime(row.createTime) }}
+            </template>
+          </el-table-column>
+
+          <el-table-column label="操作" width="120" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                v-if="row.source === 'direct'"
+                type="danger"
+                size="small"
+                text
+                @click="handleRemovePermission(row)"
+              >
+                移除
+              </el-button>
+              <template v-else>
+                <span v-if="row.source === 'inherit'" class="inherited-tip">
+                  <el-tooltip
+                    class="box-item"
+                    effect="dark"
+                    content="不可操作继承的权限"
+                    placement="top-start"
+                  >
+                    继承权限
+                  </el-tooltip>
+                </span>
+                <span v-else-if="row.source === 'public'" class="inherited-tip">
+                  公共权限
+                </span>
+                <span v-else class="inherited-tip">不可操作</span>
+              </template>
+            </template>
+          </el-table-column>
+        </el-table>
+      </ContextMenu>
+    </div>
     <div class="pagination-container">
       <el-pagination
         v-model:current-page="pagination.currentPage"
@@ -158,10 +172,7 @@
     </div>
 
     <!-- 批量操作工具栏 -->
-    <div
-      v-if="selectedRole && selectedPermissions.length"
-      class="batch-toolbar"
-    >
+    <div v-if="selectedPermissions.length" class="batch-toolbar">
       <div class="toolbar-left">
         <span>已选择 {{ selectedPermissions.length }} 个权限</span>
       </div>
@@ -183,11 +194,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed, onMounted } from "vue";
-import { Plus, Refresh, Search } from "@element-plus/icons-vue";
+import { ref, reactive, watch, onMounted, computed } from "vue";
+import { Plus, Refresh, Search, View, Remove } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { ContextMenu, MenuItem, MenuGroup } from "@/components/Menu";
 import type { Role, Permission } from "@/api/rbac";
-import { getAllPermissions } from "@/api/rbac";
 import { getRoleWithPermissions, revokeRolePermission } from "@/api/rbac";
 import AddPermissionsDialog from "./AddPermissionsDialog.vue";
 
@@ -197,7 +208,7 @@ interface RolePermission extends Permission {
 }
 
 interface Props {
-  selectedRole?: Role | null;
+  selectedRole: Role;
   loading?: boolean;
 }
 
@@ -206,7 +217,6 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  selectedRole: null,
   loading: false
 });
 
@@ -216,6 +226,80 @@ const emit = defineEmits<Emits>();
 const permissionList = ref<RolePermission[]>([]);
 const selectedPermissions = ref<RolePermission[]>([]);
 const addPermissionsDialogVisible = ref(false);
+const internalLoading = ref(false);
+
+// 计算实际的loading状态（内部loading或父组件传入的loading）
+const actualLoading = computed(() => props.loading || internalLoading.value);
+
+// 右键菜单相关
+const currentContextPermission = ref<RolePermission | null>(null);
+
+// 右键菜单显示处理
+const handlePermissionContextMenuShow = (data: {
+  event: MouseEvent;
+  targetRef: HTMLElement;
+  contextData: any;
+}) => {
+  const target = data.contextData.target as HTMLElement;
+  const row = target.closest("tr");
+
+  if (row && row.parentNode) {
+    // 查找tbody中的所有tr元素（排除thead）
+    const tbody = row.closest("tbody");
+    if (tbody) {
+      const dataRows = Array.from(tbody.querySelectorAll("tr"));
+      const index = dataRows.indexOf(row);
+
+      if (index >= 0 && index < permissionList.value.length) {
+        currentContextPermission.value = permissionList.value[index];
+        console.log(
+          "Selected permission:",
+          currentContextPermission.value,
+          "at index:",
+          index
+        );
+      }
+    }
+  }
+};
+
+// 菜单命令处理
+const handleMenuCommand = async (command: string, close: () => void) => {
+  if (!currentContextPermission.value) return;
+
+  close();
+  const permission = currentContextPermission.value;
+
+  switch (command) {
+    case "view":
+      ElMessage.info(`查看权限：${permission.name}`);
+      break;
+    case "remove":
+      if (permission.source === "direct") {
+        try {
+          await ElMessageBox.confirm(
+            `确定要移除权限 "${permission.name}" 吗？`,
+            "确认操作",
+            {
+              confirmButtonText: "确定",
+              cancelButtonText: "取消",
+              type: "warning"
+            }
+          );
+          await revokeRolePermission(props.selectedRole.id, permission.id);
+          ElMessage.success("权限移除成功");
+          await loadData();
+        } catch (error: any) {
+          if (error !== "cancel") {
+            ElMessage.error("权限移除失败");
+          }
+        }
+      }
+      break;
+  }
+
+  currentContextPermission.value = null;
+};
 const addPermissionsLoading = ref(false);
 
 // 搜索参数
@@ -229,9 +313,6 @@ const pagination = reactive({
   pageSize: 20,
   total: 0
 });
-
-// 计算属性
-const loading = computed(() => props.loading);
 
 // 格式化时间
 const formatTime = (time: string) => {
@@ -287,76 +368,56 @@ const handleCurrentChange = (page: number) => {
 // 加载数据
 const loadData = async () => {
   try {
-    if (props.selectedRole) {
-      // 获取指定角色的权限详情
-      const response = await getRoleWithPermissions(props.selectedRole.id);
-      const { publicPermissions, directPermissions, inheritedPermissions } =
-        response.data;
+    internalLoading.value = true;
+    // 获取指定角色的权限详情
+    const response = await getRoleWithPermissions(props.selectedRole.id);
+    const { publicPermissions, directPermissions, inheritedPermissions } =
+      response.data;
 
-      // 合并直接权限和继承权限
-      const allPermissions: RolePermission[] = [
-        // 处理公共权限
-        ...(publicPermissions || []).map((item: any) => ({
-          ...item.permission,
-          source: "public",
-          sourceRole: null
-        })),
-        // 处理直接权限
-        ...(directPermissions || []).map((item: any) => ({
-          ...item.permission,
-          source: "direct",
-          sourceRole: item.sourceRole
-        })),
-        // 处理继承权限
-        ...(inheritedPermissions || []).map((item: any) => ({
-          ...item.permission,
-          source: "inherit",
-          sourceRole: item.sourceRole
-        }))
-      ];
+    // 合并直接权限和继承权限
+    const allPermissions: RolePermission[] = [
+      // 处理公共权限
+      ...(publicPermissions || []).map((item: any) => ({
+        ...item.permission,
+        source: "public",
+        sourceRole: null
+      })),
+      // 处理直接权限
+      ...(directPermissions || []).map((item: any) => ({
+        ...item.permission,
+        source: "direct",
+        sourceRole: item.sourceRole
+      })),
+      // 处理继承权限
+      ...(inheritedPermissions || []).map((item: any) => ({
+        ...item.permission,
+        source: "inherit",
+        sourceRole: item.sourceRole
+      }))
+    ];
 
-      // 根据搜索关键字过滤
-      let filteredPermissions = allPermissions;
-      if (searchParams.keyword) {
-        const keyword = searchParams.keyword.toLowerCase();
-        filteredPermissions = allPermissions.filter(
-          p =>
-            p.name.toLowerCase().includes(keyword) ||
-            p.description?.toLowerCase().includes(keyword) ||
-            p.action.toLowerCase().includes(keyword)
-        );
-      }
-
-      // 手动分页
-      pagination.total = filteredPermissions.length;
-      const start = (pagination.currentPage - 1) * pagination.pageSize;
-      const end = start + pagination.pageSize;
-      permissionList.value = filteredPermissions.slice(start, end);
-    } else {
-      // 获取所有权限
-      const response = await getAllPermissions();
-      let allPermissions = response.data || [];
-
-      // 根据搜索关键字过滤
-      if (searchParams.keyword) {
-        const keyword = searchParams.keyword.toLowerCase();
-        allPermissions = allPermissions.filter(
-          p =>
-            p.name.toLowerCase().includes(keyword) ||
-            p.description?.toLowerCase().includes(keyword) ||
-            p.action.toLowerCase().includes(keyword)
-        );
-      }
-
-      // 手动分页
-      pagination.total = allPermissions.length;
-      const start = (pagination.currentPage - 1) * pagination.pageSize;
-      const end = start + pagination.pageSize;
-      permissionList.value = allPermissions.slice(start, end);
+    // 根据搜索关键字过滤
+    let filteredPermissions = allPermissions;
+    if (searchParams.keyword) {
+      const keyword = searchParams.keyword.toLowerCase();
+      filteredPermissions = allPermissions.filter(
+        p =>
+          p.name.toLowerCase().includes(keyword) ||
+          p.description?.toLowerCase().includes(keyword) ||
+          p.action.toLowerCase().includes(keyword)
+      );
     }
+
+    // 手动分页
+    pagination.total = filteredPermissions.length;
+    const start = (pagination.currentPage - 1) * pagination.pageSize;
+    const end = start + pagination.pageSize;
+    permissionList.value = filteredPermissions.slice(start, end);
   } catch (error) {
     console.error("加载权限数据失败:", error);
     ElMessage.error("加载权限数据失败");
+  } finally {
+    internalLoading.value = false;
   }
 };
 
@@ -379,7 +440,7 @@ const handleAddPermissionsSubmit = () => {
 
 // 处理移除单个权限
 const handleRemovePermission = async (permission: RolePermission) => {
-  if (!props.selectedRole || permission.source !== "direct") return;
+  if (permission.source !== "direct") return;
 
   try {
     await ElMessageBox.confirm(
@@ -405,7 +466,7 @@ const handleRemovePermission = async (permission: RolePermission) => {
 
 // 处理批量移除
 const handleBatchRemove = async () => {
-  if (!props.selectedRole || !selectedPermissions.value.length) return;
+  if (!selectedPermissions.value.length) return;
 
   try {
     await ElMessageBox.confirm(
@@ -420,7 +481,7 @@ const handleBatchRemove = async () => {
 
     // 批量调用单个移除接口
     const promises = selectedPermissions.value.map(permission =>
-      revokeRolePermission(props.selectedRole!.id, permission.id)
+      revokeRolePermission(props.selectedRole.id, permission.id)
     );
 
     await Promise.all(promises);
@@ -452,7 +513,7 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.role-permissions-view {
+.role-specific-permissions-view {
   display: flex;
   flex-direction: column;
   height: 100%;

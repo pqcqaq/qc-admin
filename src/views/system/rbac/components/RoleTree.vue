@@ -1,58 +1,68 @@
 <template>
   <div class="role-tree">
-    <el-tree
-      ref="treeRef"
-      :data="treeData"
-      :props="treeProps"
-      :loading="loading"
-      :expand-on-click-node="false"
-      default-expand-all
-      highlight-current
-      node-key="id"
-      @node-click="handleNodeClick"
-      @node-contextmenu="handleNodeRightClick"
-    >
-      <template #default="{ data }">
-        <div class="tree-node">
-          <el-icon class="node-icon">
-            <User />
-          </el-icon>
-          <span class="node-label">{{ data.name }}</span>
-          <span v-if="data.userCount !== undefined" class="node-count">
-            ({{ data.userCount }})
-          </span>
+    <ContextMenu @show="handleContextMenuShow">
+      <template #menu="{ close }">
+        <div v-if="currentContextRole" class="context-menu-content">
+          <MenuGroup title="角色操作">
+            <MenuItem
+              :icon="Edit"
+              variant="warning"
+              @click="handleMenuCommand('edit', close)"
+            >
+              编辑角色
+            </MenuItem>
+            <MenuItem
+              :icon="Plus"
+              variant="success"
+              @click="handleMenuCommand('createChild', close)"
+            >
+              创建子角色
+            </MenuItem>
+            <MenuItem
+              v-if="currentContextRole.inheritsFrom?.length"
+              :icon="Remove"
+              variant="primary"
+              @click="handleMenuCommand('removeParent', close)"
+            >
+              解除父角色依赖
+            </MenuItem>
+          </MenuGroup>
+
+          <MenuDivider />
+
+          <MenuItem
+            :icon="Delete"
+            variant="danger"
+            @click="handleMenuCommand('delete', close)"
+          >
+            删除角色
+          </MenuItem>
         </div>
       </template>
-    </el-tree>
-
-    <!-- 右键菜单 -->
-    <div
-      v-if="showContextMenu"
-      :style="contextMenuStyle"
-      class="context-menu"
-      @click.stop
-    >
-      <div class="menu-item" @click="handleMenuCommand('edit')">
-        <el-icon><Edit /></el-icon>
-        <span>编辑角色</span>
-      </div>
-      <div class="menu-item" @click="handleMenuCommand('createChild')">
-        <el-icon><Plus /></el-icon>
-        <span>创建子角色</span>
-      </div>
-      <div
-        v-if="contextMenuRole?.inheritsFrom?.length"
-        class="menu-item"
-        @click="handleMenuCommand('removeParent')"
+      <el-tree
+        ref="treeRef"
+        :data="treeData"
+        :props="treeProps"
+        :loading="loading"
+        :expand-on-click-node="false"
+        default-expand-all
+        highlight-current
+        node-key="id"
+        @node-click="handleNodeClick"
       >
-        <el-icon><Remove /></el-icon>
-        <span>解除父角色依赖</span>
-      </div>
-      <div class="menu-item danger" @click="handleMenuCommand('delete')">
-        <el-icon><Delete /></el-icon>
-        <span>删除角色</span>
-      </div>
-    </div>
+        <template #default="{ data }">
+          <div class="tree-node" :data-role-id="data.id">
+            <el-icon class="node-icon">
+              <User />
+            </el-icon>
+            <span class="node-label">{{ data.name }}</span>
+            <span v-if="data.userCount !== undefined" class="node-count">
+              ({{ data.userCount }})
+            </span>
+          </div>
+        </template>
+      </el-tree>
+    </ContextMenu>
     <!-- 解除父角色依赖子菜单 -->
     <el-dialog
       v-model="removeParentDialogVisible"
@@ -79,10 +89,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from "vue";
+import { ref, onMounted } from "vue";
 import { User, Edit, Plus, Remove, Delete } from "@element-plus/icons-vue";
 import type { Role } from "@/api/rbac";
 import { getRoleTree } from "@/api/rbac";
+import { ElTree } from "element-plus";
+import { ContextMenu } from "@/components/Menu";
+import { MenuItem, MenuDivider, MenuGroup } from "@/components/Menu";
 
 interface TreeRole extends Role {
   children?: TreeRole[];
@@ -109,14 +122,11 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 // 响应式数据
-const treeRef = ref();
-const contextMenuRef = ref();
+const treeRef = ref<InstanceType<typeof ElTree>>();
 const treeData = ref<TreeRole[]>([]);
-const contextMenuTrigger = ref();
 const contextMenuRole = ref<TreeRole | null>(null);
+const currentContextRole = ref<TreeRole | null>(null);
 const removeParentDialogVisible = ref(false);
-const showContextMenu = ref(false);
-const contextMenuStyle = ref({});
 
 // 树形组件配置
 const treeProps = {
@@ -129,24 +139,43 @@ const handleNodeClick = (data: TreeRole) => {
   emit("role-select", data);
 };
 
-// 处理节点右键点击
-const handleNodeRightClick = (event: MouseEvent, data: TreeRole) => {
-  event.preventDefault();
-  event.stopPropagation();
+// 处理右键菜单显示
+const handleContextMenuShow = (data: {
+  event: MouseEvent;
+  targetRef: any;
+  contextData: any;
+}) => {
+  const { contextData } = data;
 
-  contextMenuRole.value = data;
-  showContextMenu.value = true;
+  // 通过DOM元素找到对应的角色数据
+  const target = contextData.target as HTMLElement;
+  const roleElement = target.closest("[data-role-id]") as HTMLElement;
 
-  contextMenuStyle.value = {
-    position: "fixed",
-    left: `${event.clientX}px`,
-    top: `${event.clientY}px`,
-    zIndex: 9999
-  };
+  if (roleElement) {
+    const roleId = roleElement.getAttribute("data-role-id");
+    const role = findRoleById(treeData.value, roleId);
+
+    if (role) {
+      currentContextRole.value = role;
+      contextMenuRole.value = role;
+    }
+  }
+};
+
+// 根据ID查找角色
+const findRoleById = (roles: TreeRole[], id: string): TreeRole | null => {
+  for (const role of roles) {
+    if (role.id === id) return role;
+    if (role.children) {
+      const found = findRoleById(role.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
 };
 
 // 处理右键菜单命令
-const handleMenuCommand = (command: string) => {
+const handleMenuCommand = (command: string, closeMenu?: () => void) => {
   if (!contextMenuRole.value) return;
 
   switch (command) {
@@ -172,6 +201,11 @@ const handleMenuCommand = (command: string) => {
     case "delete":
       emit("role-delete", contextMenuRole.value);
       break;
+  }
+
+  // 关闭菜单
+  if (closeMenu) {
+    closeMenu();
   }
 };
 
@@ -199,98 +233,92 @@ const refreshTree = async () => {
   await loadTreeData();
 };
 
-// 点击空白处关闭右键菜单
-const handleDocumentClick = () => {
-  showContextMenu.value = false;
+// 清除树形组件的选中状态
+const clearSelection = () => {
+  if (treeRef.value) {
+    treeRef.value.setCurrentKey(null);
+  }
 };
 
 // 暴露方法给父组件
 defineExpose({
-  refreshTree
+  refreshTree,
+  clearSelection
 });
 
 onMounted(async () => {
   await loadTreeData();
-
-  // 监听全局点击事件，关闭右键菜单
-  document.addEventListener("click", handleDocumentClick);
-});
-
-// 组件卸载时移除事件监听
-onUnmounted(() => {
-  document.removeEventListener("click", handleDocumentClick);
 });
 </script>
 
 <style lang="scss" scoped>
 .role-tree {
-  height: 100%;
   display: flex;
   flex-direction: column;
+  height: 100%;
 
   :deep(.el-tree) {
-    background: transparent;
     flex: 1;
     overflow: auto;
+    background: transparent;
 
     .el-tree-node {
       .el-tree-node__content {
         height: 42px;
         padding: 0 12px;
-        border-radius: 6px;
         margin: 2px 0;
+        border-radius: 6px;
         transition: all 0.3s ease;
 
         &:hover {
           background-color: var(--el-fill-color-light);
-          transform: translateX(2px);
         }
 
         &.is-current {
           background-color: var(--el-color-primary-light-9);
           border: 1px solid var(--el-color-primary-light-7);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 2px 4px rgb(0 0 0 / 10%);
         }
       }
 
       .el-tree-node__expand-icon {
-        color: var(--el-color-primary);
         font-size: 14px;
+        color: var(--el-color-primary);
       }
     }
   }
 
   .tree-node {
     display: flex;
-    align-items: center;
     flex: 1;
     gap: 10px;
+    align-items: center;
     min-width: 0; // 防止内容溢出
 
     .node-icon {
-      color: var(--el-color-primary);
       flex-shrink: 0;
+      color: var(--el-color-primary);
     }
 
     .node-label {
       flex: 1;
-      font-size: 14px;
-      color: var(--el-text-color-primary);
-      font-weight: 500;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--el-text-color-primary);
       white-space: nowrap;
     }
 
     .node-count {
-      font-size: 12px;
-      color: var(--el-text-color-regular);
-      background: var(--el-fill-color);
-      padding: 2px 8px;
-      border-radius: 12px;
       flex-shrink: 0;
       min-width: 24px;
+      padding: 2px 8px;
+      font-size: 12px;
+      color: var(--el-text-color-regular);
       text-align: center;
+      background: var(--el-fill-color);
+      border-radius: 12px;
     }
   }
 
@@ -304,42 +332,52 @@ onUnmounted(() => {
     }
   }
 
-  .context-menu {
-    position: fixed;
-    background: var(--el-bg-color);
-    border: 1px solid var(--el-border-color);
-    border-radius: 8px;
-    box-shadow: var(--el-box-shadow-light);
-    padding: 8px 0;
-    min-width: 150px;
-    z-index: 9999;
-
-    .menu-item {
+  // 自定义右键菜单样式
+  .context-menu-content {
+    .context-menu-item {
       display: flex;
       align-items: center;
-      padding: 10px 16px;
-      cursor: pointer;
+      padding: 8px 16px;
       font-size: 14px;
       color: var(--el-text-color-primary);
-      transition: all 0.3s ease;
+      cursor: pointer;
+      transition: all 0.2s;
 
-      &:hover {
-        background-color: var(--el-fill-color-light);
+      &:hover:not(.context-menu-item--divider) {
+        color: var(--el-color-primary);
+        background: var(--el-color-primary-light-9);
       }
 
-      &.danger {
+      &.context-menu-item--danger {
         color: var(--el-color-danger);
 
         &:hover {
-          background-color: var(--el-color-danger-light-9);
+          color: var(--el-color-danger);
+          background: var(--el-color-danger-light-9);
         }
       }
 
-      .el-icon {
-        margin-right: 10px;
-        font-size: 16px;
-        width: 16px;
+      &.context-menu-item--divider {
+        height: 1px;
+        padding: 0;
+        margin: 4px 0;
+        cursor: default;
+        background: var(--el-border-color-light);
+      }
+
+      .context-menu-icon {
         flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+        margin-right: 8px;
+        font-size: 16px;
+      }
+
+      .context-menu-label {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
     }
   }

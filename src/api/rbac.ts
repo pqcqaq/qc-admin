@@ -11,14 +11,14 @@ export type Permission = {
   action: string;
   /** 权限描述 */
   description?: string;
-  /** 所属权限域 */
-  scope?: Scope;
   /** 创建时间 */
   createTime: string;
   /** 更新时间 */
   updateTime: string;
   /** 是否为公共权限 */
   isPublic: boolean;
+  /** 拥有该权限的角色 */
+  roles?: Array<Role>;
 };
 
 export type CreatePermissionRequest = {

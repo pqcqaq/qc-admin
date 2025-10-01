@@ -35,12 +35,17 @@
           </div>
         </div>
 
-        <!-- 右侧内容区 -->
         <div class="right-panel">
           <el-tabs v-model="activeTab" class="panel-tabs">
             <!-- 用户视图 -->
             <el-tab-pane label="用户视图" name="users">
-              <RoleUsersView
+              <AllUsersView
+                v-if="!selectedRole"
+                :loading="usersLoading"
+                @refresh="refreshRoleUsers"
+              />
+              <RoleSpecificUsersView
+                v-else
                 :selected-role="selectedRole"
                 :loading="usersLoading"
                 @refresh="refreshRoleUsers"
@@ -49,7 +54,13 @@
 
             <!-- 权限视图 -->
             <el-tab-pane label="权限视图" name="permissions">
-              <RolePermissionsView
+              <AllPermissionsView
+                v-if="!selectedRole"
+                :loading="permissionsLoading"
+                @refresh="refreshRolePermissions"
+              />
+              <RoleSpecificPermissionsView
+                v-else
                 :selected-role="selectedRole"
                 :loading="permissionsLoading"
                 @refresh="refreshRolePermissions"
@@ -85,10 +96,14 @@ import {
   deleteRole,
   removeParentRole
 } from "@/api/rbac";
-import RoleTree from "./components/RoleTree.vue";
-import RoleUsersView from "./components/RoleUsersView.vue";
-import RolePermissionsView from "./components/RolePermissionsView.vue";
-import RoleFormDialog from "./components/RoleFormDialog.vue";
+import {
+  RoleTree,
+  RoleFormDialog,
+  AllUsersView,
+  RoleSpecificUsersView,
+  AllPermissionsView,
+  RoleSpecificPermissionsView
+} from "./components";
 
 defineOptions({
   name: "RbacManagement"
@@ -113,6 +128,13 @@ const roleTreeRef = ref();
 
 // 处理角色选择
 const handleRoleSelect = (role: Role | null) => {
+  // 如果已经选中，则取消选中
+  if (selectedRole.value?.id === role?.id) {
+    selectedRole.value = null;
+    // 清除树形组件的选中高亮状态
+    roleTreeRef.value?.clearSelection();
+    return;
+  }
   selectedRole.value = role;
   // 移除了强制重置tab的逻辑，保持用户当前选择的标签页
 };
@@ -168,6 +190,8 @@ const handleRoleDelete = async (role: Role) => {
     // 如果删除的是当前选中的角色，清空选中状态
     if (selectedRole.value?.id === role.id) {
       selectedRole.value = null;
+      // 清除树形组件的选中高亮状态
+      roleTreeRef.value?.clearSelection();
     }
 
     // 刷新角色树
@@ -253,8 +277,35 @@ onMounted(async () => {
 
 <style lang="scss" scoped>
 .rbac-management {
-  margin: 20px;
   height: calc(100vh - 160px);
+  margin: 20px;
+
+  // 响应式布局
+  @media (width <= 1200px) {
+    .left-panel {
+      width: 280px;
+      min-width: 280px;
+      max-width: 280px;
+    }
+  }
+
+  @media (width <= 768px) {
+    height: calc(100vh - 120px);
+    margin: 10px;
+
+    .rbac-content {
+      flex-direction: column;
+    }
+
+    .left-panel {
+      width: 100%;
+      min-width: auto;
+      max-width: none;
+      height: 300px;
+      border-right: none;
+      border-bottom: 1px solid var(--el-border-color-light);
+    }
+  }
 
   .rbac-card {
     height: 100%;
@@ -278,21 +329,21 @@ onMounted(async () => {
   }
 
   .left-panel {
+    display: flex;
+    flex-direction: column;
     width: 320px;
     min-width: 320px; // 防止压缩
     max-width: 320px; // 防止拉伸
     border-right: 1px solid var(--el-border-color-light);
-    display: flex;
-    flex-direction: column;
 
     .panel-header {
       display: flex;
+      flex-shrink: 0; // 防止header被压缩
       align-items: center;
       justify-content: space-between;
       padding: 16px;
-      border-bottom: 1px solid var(--el-border-color-light);
       background-color: var(--el-fill-color-lighter);
-      flex-shrink: 0; // 防止header被压缩
+      border-bottom: 1px solid var(--el-border-color-light);
 
       .panel-title {
         font-weight: 500;
@@ -302,24 +353,24 @@ onMounted(async () => {
 
     .tree-container {
       flex: 1;
-      overflow: auto;
-      padding: 8px;
       min-height: 0; // 确保可以滚动
+      padding: 8px;
+      overflow: auto;
     }
   }
 
   .right-panel {
-    flex: 1;
-    min-width: 0; // 允许收缩，但防止内容溢出
     display: flex;
+    flex: 1;
     flex-direction: column;
+    min-width: 0; // 允许收缩，但防止内容溢出
 
     .panel-tabs {
       height: 100%;
 
       :deep(.el-tabs__header) {
-        margin: 0;
         padding: 0 16px;
+        margin: 0;
         background-color: var(--el-fill-color-extra-light);
         border-bottom: 1px solid var(--el-border-color-light);
       }
@@ -338,33 +389,6 @@ onMounted(async () => {
         height: 100%;
         overflow: hidden; // 防止内容溢出
       }
-    }
-  }
-
-  // 响应式布局
-  @media (max-width: 1200px) {
-    .left-panel {
-      width: 280px;
-      min-width: 280px;
-      max-width: 280px;
-    }
-  }
-
-  @media (max-width: 768px) {
-    margin: 10px;
-    height: calc(100vh - 120px);
-
-    .rbac-content {
-      flex-direction: column;
-    }
-
-    .left-panel {
-      width: 100%;
-      min-width: auto;
-      max-width: none;
-      height: 300px;
-      border-right: none;
-      border-bottom: 1px solid var(--el-border-color-light);
     }
   }
 }
