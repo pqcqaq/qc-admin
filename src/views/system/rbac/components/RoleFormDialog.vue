@@ -72,8 +72,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from "vue";
 import type { FormInstance, FormRules } from "element-plus";
-import type { Role } from "@/api/rbac";
-import { getAllRoles } from "@/api/rbac";
+import type { Role } from "qc-admin-api-common/rbac";
+import { getAllRoles } from "qc-admin-api-common/rbac";
 
 interface Props {
   visible: boolean;

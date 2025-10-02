@@ -8,7 +8,7 @@ import type { FormInstance } from "element-plus";
 import { useVerifyCode } from "../utils/verifyCode";
 import { $t, transformI18n } from "@/plugins/i18n";
 import { useUserStoreHook } from "@/store/modules/user";
-import { registerApi } from "@/api/auth";
+import { registerApi } from "qc-admin-api-common/auth";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import Lock from "~icons/ri/lock-fill";
 import Iphone from "~icons/ep/iphone";

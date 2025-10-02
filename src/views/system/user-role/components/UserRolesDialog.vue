@@ -27,7 +27,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { ElMessage } from "element-plus";
-import { getUserRoles, type Role } from "@/api/rbac";
+import { getUserRoles, type Role } from "qc-admin-api-common/rbac";
 
 interface Props {
   visible: boolean;

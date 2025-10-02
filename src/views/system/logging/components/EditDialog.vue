@@ -131,7 +131,7 @@
 <script setup lang="ts">
 import { ref, reactive, nextTick, computed, watch } from "vue";
 import { type FormInstance, ElMessage, FormItemRule } from "element-plus";
-import type { Logging } from "@/api/logging";
+import type { Logging } from "qc-admin-api-common/logging";
 import { Arrayable } from "@vueuse/core";
 
 interface FormData {

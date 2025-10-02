@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Permission } from "@/api/rbac";
+import type { Permission } from "qc-admin-api-common/rbac";
 
 interface Props {
   visible: boolean;

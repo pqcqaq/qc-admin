@@ -66,7 +66,7 @@ import {
   deleteAttachment,
   getAttachmentURL,
   type Attachment
-} from "@/api/attachment";
+} from "qc-admin-api-common/attachment";
 import {
   SearchForm,
   AttachmentTable,

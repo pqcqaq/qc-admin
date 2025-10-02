@@ -192,19 +192,11 @@ class PureHttp {
   }
 
   /** 通用请求工具函数 */
-  public request<T>(
-    method: RequestMethods,
-    url: string,
-    param?: AxiosRequestConfig,
-    axiosConfig?: PureHttpRequestConfig
-  ): Promise<T> {
-    const config = {
-      method,
-      url,
-      ...param,
-      ...axiosConfig
-    } as PureHttpRequestConfig;
-
+  public request<T>(config: {
+    method: RequestMethods;
+    url: string;
+    param?: AxiosRequestConfig;
+  }): Promise<T> {
     // 单独处理自定义请求/响应回调
     return new Promise((resolve, reject) => {
       PureHttp.axiosInstance
@@ -219,48 +211,48 @@ class PureHttp {
   }
 
   /** 单独抽离的`post`工具函数 */
-  public post<T, P>(
-    url: string,
-    params?: AxiosRequestConfig<P>,
-    config?: PureHttpRequestConfig
-  ): Promise<T> {
-    return this.request<T>("post", url, params, config);
+  public post<T, P>(url: string, params?: AxiosRequestConfig<P>): Promise<T> {
+    return this.request<T>({
+      method: "post",
+      url,
+      param: params
+    });
   }
 
   /** 单独抽离的`get`工具函数 */
-  public get<T, P>(
-    url: string,
-    params?: AxiosRequestConfig<P>,
-    config?: PureHttpRequestConfig
-  ): Promise<T> {
-    return this.request<T>("get", url, params, config);
+  public get<T, P>(url: string, params?: AxiosRequestConfig<P>): Promise<T> {
+    return this.request<T>({
+      method: "get",
+      url,
+      param: params
+    });
   }
 
   /** 单独抽离的`put`工具函数 */
-  public put<T, P>(
-    url: string,
-    params?: AxiosRequestConfig<P>,
-    config?: PureHttpRequestConfig
-  ): Promise<T> {
-    return this.request<T>("put", url, params, config);
+  public put<T, P>(url: string, params?: AxiosRequestConfig<P>): Promise<T> {
+    return this.request<T>({
+      method: "put",
+      url,
+      param: params
+    });
   }
 
   /** 单独抽离的`delete`工具函数 */
-  public delete<T, P>(
-    url: string,
-    params?: AxiosRequestConfig<P>,
-    config?: PureHttpRequestConfig
-  ): Promise<T> {
-    return this.request<T>("delete", url, params, config);
+  public delete<T, P>(url: string, params?: AxiosRequestConfig<P>): Promise<T> {
+    return this.request<T>({
+      method: "delete",
+      url,
+      param: params
+    });
   }
 
   /** 单独抽离的`patch`工具函数 */
-  public patch<T, P>(
-    url: string,
-    params?: AxiosRequestConfig<P>,
-    config?: PureHttpRequestConfig
-  ): Promise<T> {
-    return this.request<T>("patch", url, params, config);
+  public patch<T, P>(url: string, params?: AxiosRequestConfig<P>): Promise<T> {
+    return this.request<T>({
+      method: "patch",
+      url,
+      param: params
+    });
   }
 }
 

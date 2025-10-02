@@ -78,7 +78,7 @@ import {
   updatePermission,
   deletePermission,
   type Permission
-} from "@/api/rbac";
+} from "qc-admin-api-common/rbac";
 import { ContextMenu, type ContextMenuItem } from "@/components/Menu";
 import PermissionManagementSearchForm from "./PermissionManagementSearchForm.vue";
 import PermissionManagementTable from "./PermissionManagementTable.vue";

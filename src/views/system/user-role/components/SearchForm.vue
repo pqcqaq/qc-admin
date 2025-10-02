@@ -55,8 +55,8 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from "vue";
 import { Search, Refresh } from "@element-plus/icons-vue";
-import { getAllRoles, type Role } from "@/api/rbac";
-import { getUserList, type User } from "@/api/user";
+import { getAllRoles, type Role } from "qc-admin-api-common/rbac";
+import { getUserList, type User } from "qc-admin-api-common/user";
 
 const emit = defineEmits<{
   search: [params: any];

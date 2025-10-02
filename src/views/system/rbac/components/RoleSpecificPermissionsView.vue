@@ -198,8 +198,11 @@ import { ref, reactive, watch, onMounted, computed } from "vue";
 import { Plus, Refresh, Search, View, Remove } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { ContextMenu, MenuItem, MenuGroup } from "@/components/Menu";
-import type { Role, Permission } from "@/api/rbac";
-import { getRoleWithPermissions, revokeRolePermission } from "@/api/rbac";
+import type { Role, Permission } from "qc-admin-api-common/rbac";
+import {
+  getRoleWithPermissions,
+  revokeRolePermission
+} from "qc-admin-api-common/rbac";
 import AddPermissionsDialog from "./AddPermissionsDialog.vue";
 
 interface RolePermission extends Permission {

@@ -174,7 +174,7 @@
 import { ref } from "vue";
 import { ElTag, ElIcon } from "element-plus";
 import { Edit, Plus, View, Delete } from "@element-plus/icons-vue";
-import type { Scope } from "@/api/rbac";
+import type { Scope } from "qc-admin-api-common/rbac";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 
 // 定义 props

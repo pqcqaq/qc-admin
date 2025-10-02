@@ -158,12 +158,12 @@ import { ref, reactive, watch, onMounted, computed } from "vue";
 import { Plus, Refresh, Search, View, Remove } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { ContextMenu, MenuItem, MenuGroup } from "@/components/Menu";
-import type { Role } from "@/api/rbac";
+import type { Role } from "qc-admin-api-common/rbac";
 import {
   getRoleUsersWithPagination,
   batchRemoveUsersFromRole,
   revokeUserRole
-} from "@/api/rbac";
+} from "qc-admin-api-common/rbac";
 import AddUsersDialog from "./AddUsersDialog.vue";
 
 interface RoleUser {

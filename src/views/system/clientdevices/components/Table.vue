@@ -59,7 +59,7 @@
 import { ref } from "vue";
 import { ElMessage, ElTag, ElTooltip } from "element-plus";
 import { PureTable } from "@pureadmin/table";
-import type { ClientDevice } from "@/api/client_devices";
+import type { ClientDevice } from "qc-admin-api-common/client_devices";
 
 interface PaginationData {
   total: number;

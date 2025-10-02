@@ -96,7 +96,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { ElTag, ElText } from "element-plus";
-import type { ClientDevice } from "@/api/client_devices";
+import type { ClientDevice } from "qc-admin-api-common/client_devices";
 
 // 定义 props
 const props = defineProps<{

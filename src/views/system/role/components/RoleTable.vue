@@ -59,7 +59,7 @@
 import { ref } from "vue";
 import { ElTag } from "element-plus";
 import { PureTable } from "@pureadmin/table";
-import type { Role } from "@/api/rbac";
+import type { Role } from "qc-admin-api-common/rbac";
 
 interface PaginationData {
   total: number;

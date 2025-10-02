@@ -10,9 +10,12 @@ import { createApp, type Directive } from "vue";
 import { useElementPlus } from "@/plugins/elementPlus";
 import { injectResponsiveStorage } from "@/utils/responsive";
 
+// 初始化公共API客户端
+import { initHttpClient, setClientCode } from "qc-admin-api-common";
+import { http } from "@/utils/http";
+
 import Table from "@pureadmin/table";
 import PureDescriptions from "@pureadmin/descriptions";
-
 // 引入重置样式
 import "./style/reset.scss";
 // 导入公共样式
@@ -23,6 +26,10 @@ import "element-plus/dist/index.css";
 // 导入字体图标
 import "./assets/iconfont/iconfont.js";
 import "./assets/iconfont/iconfont.css";
+
+// 初始化HTTP客户端和设置客户端代码
+initHttpClient(http as any);
+setClientCode(import.meta.env.VITE_CLIENT_CODE || "");
 
 const app = createApp(App);
 

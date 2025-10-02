@@ -57,7 +57,7 @@ import {
   exportLoggingsToExcel as exportApi,
   type Logging,
   type LoggingPageParams
-} from "@/api/logging";
+} from "qc-admin-api-common/logging";
 import { SearchForm, Table, EditDialog, ViewDialog } from "./components";
 
 defineOptions({

@@ -1,7 +1,7 @@
 import type { FormInstance, FormItemProp } from "element-plus";
 import { clone } from "@pureadmin/utils";
 import { ref } from "vue";
-import { sendVerifyCodeApi } from "@/api/auth";
+import { sendVerifyCodeApi } from "qc-admin-api-common/auth";
 import { message } from "@/utils/message";
 
 export const useVerifyCode = (formData?: any) => {

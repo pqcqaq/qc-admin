@@ -52,7 +52,7 @@ import {
   updateAPIAuth,
   deleteAPIAuth,
   type APIAuth
-} from "@/api/api_auth";
+} from "qc-admin-api-common/api_auth";
 import {
   SearchForm,
   ApiAuthTable,

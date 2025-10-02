@@ -12,7 +12,7 @@ import {
   type RefreshTokenResult,
   getLogin,
   refreshTokenApi
-} from "@/api/auth";
+} from "qc-admin-api-common/auth";
 import { useMultiTagsStoreHook } from "./multiTags";
 import { type DataInfo, setToken, removeToken, userKey } from "@/utils/auth";
 import { message } from "@/utils/message";

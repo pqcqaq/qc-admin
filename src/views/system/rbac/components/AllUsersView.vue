@@ -111,8 +111,8 @@
 import { ref, reactive, onMounted, computed } from "vue";
 import { Refresh, View, UserFilled, Search } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import type { Role } from "@/api/rbac";
-import { getUserListWithPagination, type User } from "@/api/user";
+import type { Role } from "qc-admin-api-common/rbac";
+import { getUserListWithPagination, type User } from "qc-admin-api-common/user";
 import { ContextMenu } from "@/components/Menu";
 import { MenuItem, MenuDivider, MenuGroup } from "@/components/Menu";
 

@@ -52,7 +52,7 @@ import {
   updateUser,
   deleteUser,
   type User
-} from "@/api/user";
+} from "qc-admin-api-common/user";
 import {
   SearchForm,
   UserTable,

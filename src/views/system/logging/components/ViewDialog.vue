@@ -104,7 +104,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { ElTag, ElText, ElScrollbar } from "element-plus";
-import type { Logging } from "@/api/logging";
+import type { Logging } from "qc-admin-api-common/logging";
 
 // 定义 props
 const props = defineProps<{

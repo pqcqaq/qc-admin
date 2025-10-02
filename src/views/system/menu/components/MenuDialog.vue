@@ -207,7 +207,7 @@ import {
   type Scope,
   getAllPermissions,
   type Permission
-} from "@/api/rbac";
+} from "qc-admin-api-common/rbac";
 import { IconSelect } from "@/components/ReIcon";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 

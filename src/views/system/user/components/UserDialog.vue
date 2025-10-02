@@ -58,7 +58,7 @@
 <script setup lang="ts">
 import { ref, reactive, nextTick, computed, watch } from "vue";
 import { type FormInstance } from "element-plus";
-import type { User } from "@/api/user";
+import type { User } from "qc-admin-api-common/user";
 import UploadFormItem from "@/components/Upload/UploadFormItem.vue";
 
 interface UserFormData {

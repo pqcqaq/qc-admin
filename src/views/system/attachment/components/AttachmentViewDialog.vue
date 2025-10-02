@@ -113,7 +113,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { ElTag, ElImage } from "element-plus";
-import type { Attachment } from "@/api/attachment";
+import type { Attachment } from "qc-admin-api-common/attachment";
 
 // 定义 props
 const props = defineProps<{

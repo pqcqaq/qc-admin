@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { ElTag } from "element-plus";
-import type { APIAuth } from "@/api/api_auth";
+import type { APIAuth } from "qc-admin-api-common/api_auth";
 
 // 定义 props
 const props = defineProps<{

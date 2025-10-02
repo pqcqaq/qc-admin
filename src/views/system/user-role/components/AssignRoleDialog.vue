@@ -64,8 +64,8 @@
 import { ref, reactive, computed, watch, onMounted } from "vue";
 import type { FormInstance, FormRules } from "element-plus";
 import { ElMessage } from "element-plus";
-import { getAllRoles, type Role } from "@/api/rbac";
-import { getUserList, type User } from "@/api/user";
+import { getAllRoles, type Role } from "qc-admin-api-common/rbac";
+import { getUserList, type User } from "qc-admin-api-common/user";
 
 interface Props {
   visible: boolean;

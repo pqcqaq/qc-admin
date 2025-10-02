@@ -109,7 +109,7 @@ import type {
   ClientDevicePageRequest,
   ClientDeviceOrderByField,
   OrderDirection
-} from "@/api/client_devices";
+} from "qc-admin-api-common/client_devices";
 
 interface SearchFormData
   extends Omit<ClientDevicePageRequest, "page" | "pageSize"> {

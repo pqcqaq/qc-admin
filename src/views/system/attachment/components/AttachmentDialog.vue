@@ -56,7 +56,7 @@
 <script setup lang="ts">
 import { ref, reactive, nextTick, computed, watch } from "vue";
 import { type FormInstance } from "element-plus";
-import type { Attachment } from "@/api/attachment";
+import type { Attachment } from "qc-admin-api-common/attachment";
 import TagInput from "./TagInput.vue";
 
 interface AttachmentFormData {

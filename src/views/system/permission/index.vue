@@ -55,7 +55,7 @@ import {
   updatePermission,
   deletePermission,
   type Permission
-} from "@/api/rbac";
+} from "qc-admin-api-common/rbac";
 import {
   SearchForm,
   PermissionTable,

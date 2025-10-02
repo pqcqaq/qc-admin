@@ -50,7 +50,7 @@
 import { ref } from "vue";
 import { ElTag } from "element-plus";
 import { PureTable } from "@pureadmin/table";
-import type { User } from "@/api/user";
+import type { User } from "qc-admin-api-common/user";
 
 interface PaginationData {
   total: number;

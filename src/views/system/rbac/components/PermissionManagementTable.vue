@@ -92,7 +92,7 @@ import {
   MenuGroup,
   MenuDivider
 } from "@/components/Menu";
-import type { Permission } from "@/api/rbac";
+import type { Permission } from "qc-admin-api-common/rbac";
 
 interface PaginationData {
   total: number;

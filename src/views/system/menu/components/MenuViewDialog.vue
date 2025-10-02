@@ -106,7 +106,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Scope } from "@/api/rbac";
+import type { Scope } from "qc-admin-api-common/rbac";
 
 interface Props {
   visible: boolean;

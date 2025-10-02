@@ -40,7 +40,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from "vue";
 import { Search, Refresh } from "@element-plus/icons-vue";
-import { getAllScopes, type Scope } from "@/api/rbac";
+import { getAllScopes, type Scope } from "qc-admin-api-common/rbac";
 
 const emit = defineEmits<{
   search: [params: any];

@@ -232,7 +232,7 @@ import {
   createPermission,
   type Permission,
   type CreatePermissionRequest
-} from "@/api/rbac";
+} from "qc-admin-api-common/rbac";
 
 interface Props {
   modelValue: Permission[];

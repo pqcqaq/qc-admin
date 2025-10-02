@@ -54,7 +54,7 @@ import {
   updateScope,
   deleteScope,
   type Scope
-} from "@/api/rbac";
+} from "qc-admin-api-common/rbac";
 import {
   SearchForm,
   MenuTable,

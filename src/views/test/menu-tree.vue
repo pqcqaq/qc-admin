@@ -55,7 +55,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { ElMessage } from "element-plus";
-import { getUserMenuTree } from "@/api/menu";
+import { getUserMenuTree } from "qc-admin-api-common/menu";
 
 defineOptions({
   name: "TestMenuTree"

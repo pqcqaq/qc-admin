@@ -182,7 +182,7 @@ import {
   Document
 } from "@element-plus/icons-vue";
 import type { UploadFile, UploadFiles } from "element-plus";
-import { prepareUpload, confirmUpload } from "@/api/attachment";
+import { prepareUpload, confirmUpload } from "qc-admin-api-common/attachment";
 
 // 定义组件类型
 type UploadType = "avatar" | "drag" | "card" | "button";

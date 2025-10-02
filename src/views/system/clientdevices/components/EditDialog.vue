@@ -99,7 +99,7 @@ import type {
   RoleInfo,
   CreateClientDeviceRequest,
   UpdateClientDeviceRequest
-} from "@/api/client_devices";
+} from "qc-admin-api-common/client_devices";
 import RoleSelector from "@/components/Role/RoleSelector.vue";
 import { Arrayable } from "@vueuse/core";
 

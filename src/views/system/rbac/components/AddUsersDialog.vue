@@ -117,9 +117,9 @@
 import { ref, reactive, watch, onMounted } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import type { Role } from "@/api/rbac";
-import { getUserList } from "@/api/user";
-import { batchAssignUsersToRole, getUserRoles } from "@/api/rbac";
+import type { Role } from "qc-admin-api-common/rbac";
+import { getUserList } from "qc-admin-api-common/user";
+import { batchAssignUsersToRole, getUserRoles } from "qc-admin-api-common/rbac";
 
 interface User {
   id: string;

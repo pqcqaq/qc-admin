@@ -68,7 +68,7 @@
 import { ref } from "vue";
 import { ElTag, ElImage } from "element-plus";
 import { PureTable } from "@pureadmin/table";
-import type { Attachment } from "@/api/attachment";
+import type { Attachment } from "qc-admin-api-common/attachment";
 
 interface PaginationData {
   total: number;

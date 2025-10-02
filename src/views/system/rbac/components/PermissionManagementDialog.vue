@@ -67,7 +67,11 @@
 import { ref, reactive, computed, watch, onMounted } from "vue";
 import type { FormInstance, FormRules } from "element-plus";
 import { ElMessage } from "element-plus";
-import { getAllScopes, type Permission, type Scope } from "@/api/rbac";
+import {
+  getAllScopes,
+  type Permission,
+  type Scope
+} from "qc-admin-api-common/rbac";
 
 interface Props {
   visible?: boolean;

@@ -58,7 +58,7 @@ import {
   revokeUserRole,
   getUserRoleList,
   type UserRole
-} from "@/api/rbac";
+} from "qc-admin-api-common/rbac";
 import {
   SearchForm,
   UserRoleTable,

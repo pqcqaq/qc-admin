@@ -38,7 +38,8 @@ const pathResolve = (dir = ".", metaUrl = import.meta.url) => {
 /** 设置别名 */
 const alias: Record<string, string> = {
   "@": pathResolve("../src"),
-  "@build": pathResolve()
+  "@build": pathResolve(),
+  "@api": pathResolve("../node_modules/qc-admin-api-common")
 };
 
 /** 平台的名称、版本、运行所需的`node`和`pnpm`版本、依赖、最后构建时间的类型提示 */
@@ -56,7 +57,8 @@ const wrapperEnv = (envConf: Recordable): ViteEnv => {
     VITE_ROUTER_HISTORY: "",
     VITE_CDN: false,
     VITE_HIDE_HOME: "false",
-    VITE_COMPRESSION: "none"
+    VITE_COMPRESSION: "none",
+    VITE_CLIENT_CODE: "none"
   };
 
   for (const envName of Object.keys(envConf)) {

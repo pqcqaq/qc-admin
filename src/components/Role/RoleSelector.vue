@@ -228,8 +228,8 @@ import {
   createRole,
   type Role,
   type CreateRoleRequest
-} from "@/api/rbac";
-import { RoleInfo } from "@/api/client_devices";
+} from "qc-admin-api-common/rbac";
+import { RoleInfo } from "qc-admin-api-common/client_devices";
 
 interface Props {
   modelValue: RoleInfo[];

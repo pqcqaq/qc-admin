@@ -49,7 +49,7 @@
 <script setup lang="tsx">
 import { ref } from "vue";
 import { PureTable } from "@pureadmin/table";
-import type { UserRole } from "@/api/rbac";
+import type { UserRole } from "qc-admin-api-common/rbac";
 
 interface PaginationData {
   total: number;

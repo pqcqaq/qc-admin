@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { reactive, getCurrentInstance, onBeforeMount, onUnmounted } from "vue";
 import { deviceDetection } from "@pureadmin/utils";
-import AMapLoader from "@amap/amap-jsapi-loader";
-import { mapJson } from "@/api/mock";
+// import AMapLoader from "@amap/amap-jsapi-loader";
+// import { mapJson } from "qc-admin-api-common/mock";
 import car from "@/assets/car.png";
 
 export interface MapConfigureInter {
@@ -42,75 +42,75 @@ onBeforeMount(() => {
   const { MapConfigure } = instance.appContext.config.globalProperties.$config;
   const { options } = MapConfigure;
 
-  AMapLoader.load({
-    key: MapConfigure.amapKey,
-    version: "2.0",
-    plugins: ["AMap.MarkerCluster"]
-  })
-    .then(AMap => {
-      // 创建地图实例
-      map = new AMap.Map(instance.refs.mapview, options);
+  // AMapLoader.load({
+  //   key: MapConfigure.amapKey,
+  //   version: "2.0",
+  //   plugins: ["AMap.MarkerCluster"]
+  // })
+  //   .then(AMap => {
+  //     // 创建地图实例
+  //     map = new AMap.Map(instance.refs.mapview, options);
 
-      //地图中添加地图操作ToolBar插件
-      map.plugin(["AMap.ToolBar", "AMap.MapType"], () => {
-        map.addControl(new AMap.ToolBar());
-        //地图类型切换
-        map.addControl(
-          new AMap.MapType({
-            defaultType: 0
-          })
-        );
-      });
+  //     //地图中添加地图操作ToolBar插件
+  //     map.plugin(["AMap.ToolBar", "AMap.MapType"], () => {
+  //       map.addControl(new AMap.ToolBar());
+  //       //地图类型切换
+  //       map.addControl(
+  //         new AMap.MapType({
+  //           defaultType: 0
+  //         })
+  //       );
+  //     });
 
-      MarkerCluster = new AMap.MarkerCluster(map, [], {
-        // 聚合网格像素大小
-        gridSize: 80,
-        maxZoom: 14,
-        renderMarker(ctx) {
-          const { marker, data } = ctx;
-          if (Array.isArray(data) && data[0]) {
-            const { driver, plateNumber, orientation } = data[0];
-            const content = `<img style="transform: scale(1) rotate(${
-              360 - Number(orientation)
-            }deg);" src='${car}' />`;
-            marker.setContent(content);
-            marker.setLabel({
-              direction: "bottom",
-              //设置文本标注偏移量
-              offset: new AMap.Pixel(-4, 0),
-              //设置文本标注内容
-              content: `<div> ${plateNumber}(${driver})</div>`
-            });
-            marker.setOffset(new AMap.Pixel(-18, -10));
-            marker.on("click", ({ lnglat }) => {
-              map.setZoom(13); //设置地图层级
-              map.setCenter(lnglat);
-            });
-          }
-        }
-      });
+  //     MarkerCluster = new AMap.MarkerCluster(map, [], {
+  //       // 聚合网格像素大小
+  //       gridSize: 80,
+  //       maxZoom: 14,
+  //       renderMarker(ctx) {
+  //         const { marker, data } = ctx;
+  //         if (Array.isArray(data) && data[0]) {
+  //           const { driver, plateNumber, orientation } = data[0];
+  //           const content = `<img style="transform: scale(1) rotate(${
+  //             360 - Number(orientation)
+  //           }deg);" src='${car}' />`;
+  //           marker.setContent(content);
+  //           marker.setLabel({
+  //             direction: "bottom",
+  //             //设置文本标注偏移量
+  //             offset: new AMap.Pixel(-4, 0),
+  //             //设置文本标注内容
+  //             content: `<div> ${plateNumber}(${driver})</div>`
+  //           });
+  //           marker.setOffset(new AMap.Pixel(-18, -10));
+  //           marker.on("click", ({ lnglat }) => {
+  //             map.setZoom(13); //设置地图层级
+  //             map.setCenter(lnglat);
+  //           });
+  //         }
+  //       }
+  //     });
 
-      // 获取模拟车辆信息
-      mapJson()
-        .then(({ data }) => {
-          const points: object = data.map(v => {
-            return {
-              lnglat: [v.lng, v.lat],
-              ...v
-            };
-          });
-          if (MarkerCluster) MarkerCluster.setData(points);
-        })
-        .catch(err => {
-          console.log("err:", err);
-        });
+  //     // // 获取模拟车辆信息
+  //     // mapJson()
+  //     //   .then(({ data }) => {
+  //     //     const points: object = data.map(v => {
+  //     //       return {
+  //     //         lnglat: [v.lng, v.lat],
+  //     //         ...v
+  //     //       };
+  //     //     });
+  //     //     if (MarkerCluster) MarkerCluster.setData(points);
+  //     //   })
+  //     //   .catch(err => {
+  //     //     console.log("err:", err);
+  //     //   });
 
-      complete();
-    })
-    .catch(() => {
-      mapSet.loading = false;
-      throw "地图加载失败，请重新加载";
-    });
+  //     complete();
+  //   })
+  //   .catch(() => {
+  //     mapSet.loading = false;
+  //     throw "地图加载失败，请重新加载";
+  //   });
 });
 
 onUnmounted(() => {

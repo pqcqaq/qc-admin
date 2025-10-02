@@ -8,7 +8,7 @@ import type { FormInstance } from "element-plus";
 import { $t, transformI18n } from "@/plugins/i18n";
 import { useVerifyCode } from "../utils/verifyCode";
 import { useUserStoreHook } from "@/store/modules/user";
-import { getLogin } from "@/api/auth";
+import { getLogin } from "qc-admin-api-common/auth";
 import { initRouter, getTopMenu } from "@/router/utils";
 import { setToken } from "@/utils/auth";
 import { useRouter } from "vue-router";
@@ -43,12 +43,12 @@ const onLogin = async (formEl: FormInstance | undefined) => {
           if (res.success) {
             // 设置token和用户信息
             const tokenData = {
-              accessToken: res.data.token,
-              refreshToken: res.data.token,
-              expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24小时后过期
+              accessToken: res.data.token.accessToken,
+              refreshToken: res.data.token.refreshToken,
+              expires: res.data.token.accessExpiredIn,
               username: res.data.user.name,
               nickname: res.data.user.name,
-              avatar: "",
+              avatar: res.data.user.avatar,
               roles: res.data.user.roles || [],
               permissions: res.data.user.permissions || []
             };

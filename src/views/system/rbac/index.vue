@@ -87,7 +87,7 @@
 import { ref, reactive, onMounted } from "vue";
 import { Plus } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import type { Role } from "@/api/rbac";
+import type { Role } from "qc-admin-api-common/rbac";
 import {
   getRoleTree,
   createRole,
@@ -95,7 +95,7 @@ import {
   updateRole,
   deleteRole,
   removeParentRole
-} from "@/api/rbac";
+} from "qc-admin-api-common/rbac";
 import {
   RoleTree,
   RoleFormDialog,

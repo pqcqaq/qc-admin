@@ -62,7 +62,7 @@ import {
   deleteRole,
   assignRolePermissions,
   type Role
-} from "@/api/rbac";
+} from "qc-admin-api-common/rbac";
 import {
   SearchForm,
   RoleTable,

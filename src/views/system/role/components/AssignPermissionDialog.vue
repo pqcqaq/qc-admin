@@ -68,7 +68,7 @@ import {
   type Role,
   type Permission,
   type Scope
-} from "@/api/rbac";
+} from "qc-admin-api-common/rbac";
 
 interface Props {
   visible: boolean;

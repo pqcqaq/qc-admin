@@ -91,14 +91,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { User, Edit, Plus, Remove, Delete } from "@element-plus/icons-vue";
-import type { Role } from "@/api/rbac";
-import { getRoleTree } from "@/api/rbac";
+import type { Role } from "qc-admin-api-common/rbac";
+import { getRoleTree } from "qc-admin-api-common/rbac";
 import { ElTree } from "element-plus";
 import { ContextMenu } from "@/components/Menu";
 import { MenuItem, MenuDivider, MenuGroup } from "@/components/Menu";
 
 interface TreeRole extends Role {
   children?: TreeRole[];
+  inheritsFrom?: Role[];
   userCount?: number;
 }
 

@@ -59,6 +59,9 @@ importers:
       pinyin-pro:
         specifier: ^3.26.0
         version: 3.27.0
+      qc-admin-api-common:
+        specifier: file:../qc-admin-api-common
+        version: file:../qc-admin-api-common(axios@1.11.0)
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -3417,6 +3420,11 @@ packages:
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
+
+  qc-admin-api-common@file:../qc-admin-api-common:
+    resolution: {directory: ../qc-admin-api-common, type: directory}
+    peerDependencies:
+      axios: '>=1.0.0'
 
   qrcode@1.5.4:
     resolution: {integrity: sha512-1ca71Zgiu6ORjHqFBDpnSMTR2ReToX4l1Au1VFLyVeBTFavzQnv5JxMFr3ukHVKpSrSA2MCk0lNJSykjUfz7Zg==}
@@ -7306,6 +7314,10 @@ snapshots:
   proxy-from-env@1.1.0: {}
 
   punycode@2.3.1: {}
+
+  qc-admin-api-common@file:../qc-admin-api-common(axios@1.11.0):
+    dependencies:
+      axios: 1.11.0
 
   qrcode@1.5.4:
     dependencies:

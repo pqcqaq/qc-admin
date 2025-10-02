@@ -53,6 +53,7 @@
     "pinyin-pro": "^3.26.0",
     "qrcode": "^1.5.4",
     "qs": "^6.14.0",
+    "qc-admin-api-common": "file:../qc-admin-api-common",
     "responsive-storage": "^2.2.0",
     "sortablejs": "^1.15.6",
     "typeit": "^8.8.7",

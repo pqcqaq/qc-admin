@@ -28,6 +28,9 @@
       ],
       "@build/*": [
         "build/*"
+      ],
+      "@api/*": [
+        "node_modules/qc-admin-api-common/*"
       ]
     },
     "types": [

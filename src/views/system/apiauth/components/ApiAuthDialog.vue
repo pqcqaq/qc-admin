@@ -68,9 +68,9 @@
 <script setup lang="ts">
 import { ref, reactive, nextTick, computed, watch } from "vue";
 import { type FormInstance } from "element-plus";
-import type { APIAuth } from "@/api/api_auth";
+import type { APIAuth } from "qc-admin-api-common/api_auth";
 import PermissionSelector from "@/components/Permission/PermissionSelector.vue";
-import { Permission } from "@/api/rbac";
+import { Permission } from "qc-admin-api-common/rbac";
 
 interface FormData {
   id: string;

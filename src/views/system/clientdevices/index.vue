@@ -59,7 +59,7 @@ import {
   getClientDevice as getByIdApi,
   type ClientDevice,
   type ClientDevicePageRequest
-} from "@/api/client_devices";
+} from "qc-admin-api-common/client_devices";
 import { SearchForm, Table, EditDialog, ViewDialog } from "./components";
 import { message } from "@/utils/message";
 

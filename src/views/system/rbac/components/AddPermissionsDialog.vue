@@ -146,14 +146,14 @@
 import { ref, reactive, watch, onMounted } from "vue";
 import { Search, Plus } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import type { Role, Permission, Scope } from "@/api/rbac";
+import type { Role, Permission, Scope } from "qc-admin-api-common/rbac";
 import {
   getAssignablePermissions,
   assignRolePermissions,
   getAllScopes,
   createPermission,
   type CreatePermissionRequest
-} from "@/api/rbac";
+} from "qc-admin-api-common/rbac";
 import PermissionDialog from "../../permission/components/PermissionDialog.vue";
 
 interface Props {

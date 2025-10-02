@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { ElTag } from "element-plus";
-import type { User } from "@/api/user";
+import type { User } from "qc-admin-api-common/user";
 
 // 定义 props
 const props = defineProps<{
