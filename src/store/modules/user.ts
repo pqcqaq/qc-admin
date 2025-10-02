@@ -15,6 +15,7 @@ import {
 } from "@/api/auth";
 import { useMultiTagsStoreHook } from "./multiTags";
 import { type DataInfo, setToken, removeToken, userKey } from "@/utils/auth";
+import { message } from "@/utils/message";
 
 export const useUserStore = defineStore("pure-user", {
   state: (): userType => ({
@@ -134,6 +135,10 @@ export const useUserStore = defineStore("pure-user", {
             }
           })
           .catch(error => {
+            message("刷新token失败，请重新登录", {
+              type: "error"
+            });
+            this.logOut();
             reject(error);
           });
       });
