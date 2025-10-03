@@ -21,6 +21,7 @@ export const useSocketStore = defineStore("socket", () => {
       return;
     }
     socketClient.value = new SocketClient({
+      url: import.meta.env.VITE_SOCKET_URL,
       token: getToken().accessToken,
       heartbeatInterval: 45000,
       adapter: createBrowserAdapter()
