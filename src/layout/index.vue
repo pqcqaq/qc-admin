@@ -31,6 +31,7 @@ import LaySetting from "./components/lay-setting/index.vue";
 import NavVertical from "./components/lay-sidebar/NavVertical.vue";
 import NavHorizontal from "./components/lay-sidebar/NavHorizontal.vue";
 import BackTopIcon from "@/assets/svg/back_top.svg?component";
+import { useSocketStore } from "@/store/modules/socket";
 
 const { t } = useI18n();
 const appWrapperRef = ref();
@@ -39,6 +40,9 @@ const { layout } = useLayout();
 const isMobile = deviceDetection();
 const pureSetting = useSettingStoreHook();
 const { $storage } = useGlobal<GlobalPropertiesApi>();
+
+const socketStore = useSocketStore();
+socketStore.start();
 
 const set: setType = reactive({
   sidebar: computed(() => {

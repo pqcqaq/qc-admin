@@ -10,8 +10,13 @@ import {
 } from "./build/utils";
 
 export default ({ mode }: ConfigEnv): UserConfigExport => {
-  const { VITE_CDN, VITE_PORT, VITE_COMPRESSION, VITE_PUBLIC_PATH } =
-    wrapperEnv(loadEnv(mode, root));
+  const {
+    VITE_CDN,
+    VITE_PORT,
+    VITE_COMPRESSION,
+    VITE_PUBLIC_PATH,
+    VITE_SOCKET_URL
+  } = wrapperEnv(loadEnv(mode, root));
   return {
     base: VITE_PUBLIC_PATH,
     root,
@@ -30,6 +35,12 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
           target: "http://localhost:8080/api/v1",
           changeOrigin: true,
           rewrite: path => path.replace(/^\/api/, "")
+        },
+        [VITE_SOCKET_URL]: {
+          target: "ws://localhost:8088/ws",
+          ws: true,
+          changeOrigin: true,
+          rewrite: path => path.replace(new RegExp(`^${VITE_SOCKET_URL}`), "")
         }
       },
       // 预热文件以提前转换和缓存结果，降低启动期间的初始页面加载时长并防止转换瀑布
