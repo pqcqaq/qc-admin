@@ -3,6 +3,7 @@ import {
   SocketClient,
   type UnsubscribeFunction
 } from "qc-admin-api-common/socket";
+import { createBrowserAdapter } from "qc-admin-api-common/adaptor/browser";
 import { defineStore } from "pinia";
 import { onMounted, onUnmounted, type Ref, ref } from "vue";
 import { getToken } from "@/utils/auth";
@@ -21,9 +22,8 @@ export const useSocketStore = defineStore("socket", () => {
     }
     socketClient.value = new SocketClient({
       token: getToken().accessToken,
-      reconnectAttempts: 5,
-      reconnectInterval: 3000,
-      heartbeatInterval: 45000
+      heartbeatInterval: 45000,
+      adapter: createBrowserAdapter()
     });
     socketClient.value.connect();
   };
