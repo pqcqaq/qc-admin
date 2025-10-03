@@ -2,7 +2,7 @@ import {
   type MessageHandler,
   SocketClient,
   type UnsubscribeFunction
-} from "@/utils/socket";
+} from "qc-admin-api-common/socket";
 import { defineStore } from "pinia";
 import { onMounted, onUnmounted, type Ref, ref } from "vue";
 import { getToken } from "@/utils/auth";
