@@ -6,7 +6,8 @@ import {
 import { createBrowserAdapter } from "qc-admin-api-common/adaptor/browser";
 import { defineStore } from "pinia";
 import { onMounted, onUnmounted, type Ref, ref } from "vue";
-import { getToken } from "@/utils/auth";
+import { getToken, setToken } from "@/utils/auth";
+import { useUserStore } from "./user";
 
 export const useSocketStore = defineStore("socket", () => {
   const socketClient = ref<SocketClient | null>(null);
@@ -24,7 +25,25 @@ export const useSocketStore = defineStore("socket", () => {
       url: import.meta.env.VITE_SOCKET_URL,
       token: getToken().accessToken,
       heartbeatInterval: 45000,
-      adapter: createBrowserAdapter()
+      adapter: createBrowserAdapter(),
+      refreshToken: () => {
+        const userStore = useUserStore();
+        return userStore
+          .handRefreshToken({
+            refreshToken: getToken().refreshToken || ""
+          })
+          .then(res => {
+            if (res.success && res.data.token) {
+              setToken({
+                accessToken: res.data.token.accessToken,
+                refreshToken: res.data.token.refreshToken,
+                expires: res.data.token.accessExpiredIn
+              });
+              return res.data.token.accessToken;
+            }
+            throw new Error(res.data.message || "刷新token失败");
+          });
+      }
     });
     socketClient.value.connect();
   };
