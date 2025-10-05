@@ -43,6 +43,9 @@ export const useSocketStore = defineStore("socket", () => {
             }
             throw new Error(res.data.message || "刷新token失败");
           });
+      },
+      errorHandler: msg => {
+        console.error("WebSocket error:", msg);
       }
     });
     socketClient.value.connect();
@@ -95,6 +98,20 @@ export const useSocketStore = defineStore("socket", () => {
         console.warn("socketClient is not initialized");
         return;
       }
+    },
+    sendMessage: (...params) => {
+      if (!socketClient.value) {
+        console.warn("socketClient is not initialized");
+        return;
+      }
+      return socketClient.value.sendMessage(...params);
+    },
+    createChannel: (...params) => {
+      if (!socketClient.value) {
+        console.warn("socketClient is not initialized");
+        return;
+      }
+      return socketClient.value.createChannel(...params);
     }
   } satisfies {
     start: () => void;
@@ -103,5 +120,7 @@ export const useSocketStore = defineStore("socket", () => {
     unsubscribe: SocketClient["unsubscribe"];
     unsubscribeAll: SocketClient["unsubscribeAll"];
     hookOnMounted: <T>(topic: string, handler: MessageHandler<T>) => void;
+    sendMessage: SocketClient["sendMessage"];
+    createChannel: SocketClient["createChannel"];
   };
 });
