@@ -256,11 +256,11 @@ const handleTest = () => {
 };
 
 const handleTestMulti = () => {
-  for (let i = 0; i < 500; i++) {
+  for (let i = 0; i < 15; i++) {
     const topic = `test_handler/${i}`;
     socketStore
       .createChannel<string, string>(topic, msg => {
-        message(`频道 ${topic} 消息: ${msg}`, { type: "info" });
+        console.log(`频道 ${topic} 消息: ${msg}`, { type: "info" });
       })
       .then(({ send, onClose }) => {
         message(`频道 ${topic} 创建成功`, { type: "success" });

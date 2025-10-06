@@ -20,7 +20,7 @@ export type appType = {
   layout: string;
   device: string;
   viewportSize: { width: number; height: number };
-  sortSwap: boolean;
+  // sortSwap: boolean;
 };
 
 export type multiType = {
