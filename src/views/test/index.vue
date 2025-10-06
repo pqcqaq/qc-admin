@@ -24,6 +24,9 @@
       测试多频道交互
     </el-button>
 
+    <!-- 测试panic -->
+    <el-button type="primary" @click="handleTestPanic"> 测试Panic </el-button>
+
     <!-- 聊天室组件 -->
     <div
       style="
@@ -281,6 +284,37 @@ const handleTestMulti = () => {
         message(`频道 ${topic} 创建失败: ${err.message}`, { type: "error" });
       });
   }
+};
+
+const handleTestPanic = () => {
+  socketStore
+    .createChannel<string, string>(
+      "test_panic/1",
+      msg => {
+        message(`频道消息: ${msg}`, { type: "info" });
+      },
+      err => {
+        message(`频道错误: ${err.detail}`, { type: "error" });
+      }
+    )
+    .then(({ send, onClose }) => {
+      message("频道创建成功", { type: "success" });
+
+      let count = 0;
+      const id = setInterval(() => {
+        count++;
+        send(`hello from client ${count}`);
+      }, 1000);
+
+      // 监听频道关闭
+      onClose(() => {
+        message("频道已关闭", { type: "warning" });
+        clearInterval(id);
+      });
+    })
+    .catch(err => {
+      message(`频道创建失败: ${err.message}`, { type: "error" });
+    });
 };
 </script>
 
