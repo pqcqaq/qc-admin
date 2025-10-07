@@ -316,6 +316,19 @@ const handleTestPanic = () => {
       message(`频道创建失败: ${err.message}`, { type: "error" });
     });
 };
+
+socketStore.registerChannelOpenHook("test_handler/+", channel => {
+  message(`新频道打开: ${channel.topic}`, { type: "info" });
+  let count = 0;
+  const id = setInterval(() => {
+    if (channel.isClosed()) {
+      clearInterval(id);
+      return;
+    }
+    count++;
+    channel.send(`hello from hook ${count}`);
+  }, 100);
+});
 </script>
 
 <style scoped lang="scss">

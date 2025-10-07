@@ -1,4 +1,5 @@
 import {
+  type Channel,
   type MessageHandler,
   SocketClient,
   type UnsubscribeFunction
@@ -112,6 +113,38 @@ export const useSocketStore = defineStore("socket", () => {
         return;
       }
       return socketClient.value.createChannel(...params);
+    },
+    registerChannelOpen: (...params) => {
+      if (!socketClient.value) {
+        console.warn("socketClient is not initialized");
+        return;
+      }
+      return socketClient.value.registerChannelOpen(...params);
+    },
+    registerChannelOpenHook: (...params) => {
+      let dispose: UnsubscribeFunction | null = null;
+
+      // 清理之前的订阅（如果存在）
+      const cleanup = () => {
+        if (dispose) {
+          dispose();
+          dispose = null;
+        }
+      };
+
+      onMounted(() => {
+        // 先清理可能存在的旧订阅
+        cleanup();
+        if (!socketClient.value) {
+          console.warn("socketClient is not initialized");
+          return;
+        }
+        dispose = socketClient.value.registerChannelOpen(...params);
+      });
+
+      onUnmounted(() => {
+        cleanup();
+      });
     }
   } satisfies {
     start: () => void;
@@ -122,5 +155,10 @@ export const useSocketStore = defineStore("socket", () => {
     hookOnMounted: <T>(topic: string, handler: MessageHandler<T>) => void;
     sendMessage: SocketClient["sendMessage"];
     createChannel: SocketClient["createChannel"];
+    registerChannelOpen: SocketClient["registerChannelOpen"];
+    registerChannelOpenHook: <T>(
+      topic: string,
+      handler: (channel: Channel<T>) => void
+    ) => void;
   };
 });
