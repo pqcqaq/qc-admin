@@ -68,6 +68,9 @@ export function setToken(data: DataInfo<number>) {
       : {}
   );
 
+  const userStore = useUserStoreHook();
+  userStore.logginedIn = true;
+
   function setUserKey({ avatar, username, nickname, roles, permissions }) {
     useUserStoreHook().SET_AVATAR(avatar);
     useUserStoreHook().SET_USERNAME(username);
@@ -120,6 +123,8 @@ export function removeToken() {
   Cookies.remove(TokenKey);
   Cookies.remove(multipleTabsKey);
   storageLocal().removeItem(userKey);
+  const userStore = useUserStoreHook();
+  userStore.logginedIn = false;
 }
 
 /** 格式化token（jwt格式） */

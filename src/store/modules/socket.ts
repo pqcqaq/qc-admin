@@ -55,6 +55,12 @@ export const useSocketStore = defineStore("socket", () => {
   return {
     start,
     connect: start,
+    disConnect: () => {
+      if (socketClient.value) {
+        socketClient.value.disconnect();
+        socketClient.value = null;
+      }
+    },
     hookOnMounted: (...params) => {
       const dispose: Ref<UnsubscribeFunction | null> = ref(null);
 
@@ -149,6 +155,7 @@ export const useSocketStore = defineStore("socket", () => {
   } satisfies {
     start: () => void;
     connect: () => void;
+    disConnect: () => void;
     subscribe: SocketClient["subscribe"];
     unsubscribe: SocketClient["unsubscribe"];
     unsubscribeAll: SocketClient["unsubscribeAll"];

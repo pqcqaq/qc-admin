@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
+import { ref, watch } from "vue";
 import {
-  type userType,
   store,
   router,
   resetRouter,
@@ -16,134 +16,192 @@ import {
 import { useMultiTagsStoreHook } from "./multiTags";
 import { type DataInfo, setToken, removeToken, userKey } from "@/utils/auth";
 import { message } from "@/utils/message";
+import { useSocketStore } from "./socket";
 
-export const useUserStore = defineStore("pure-user", {
-  state: (): userType => ({
-    // 头像
-    avatar: storageLocal().getItem<DataInfo<number>>(userKey)?.avatar ?? "",
-    // 用户名
-    username: storageLocal().getItem<DataInfo<number>>(userKey)?.username ?? "",
-    // 昵称
-    nickname: storageLocal().getItem<DataInfo<number>>(userKey)?.nickname ?? "",
-    // 页面级别权限
-    roles: storageLocal().getItem<DataInfo<number>>(userKey)?.roles ?? [],
-    // 按钮级别权限
-    permissions:
-      storageLocal().getItem<DataInfo<number>>(userKey)?.permissions ?? [],
-    // 前端生成的验证码（按实际需求替换）
-    verifyCode: "",
-    // 判断登录页面显示哪个组件（0：登录（默认）、1：手机登录、2：二维码登录、3：注册、4：忘记密码）
-    currentPage: 0,
-    // 是否勾选了登录页的免登录
-    isRemembered: false,
-    // 登录页的免登录存储几天，默认7天
-    loginDay: 7
-  }),
-  actions: {
-    /** 存储头像 */
-    SET_AVATAR(avatar: string) {
-      this.avatar = avatar;
-    },
-    /** 存储用户名 */
-    SET_USERNAME(username: string) {
-      this.username = username;
-    },
-    /** 存储昵称 */
-    SET_NICKNAME(nickname: string) {
-      this.nickname = nickname;
-    },
-    /** 存储角色 */
-    SET_ROLES(roles: Array<string>) {
-      this.roles = roles;
-    },
-    /** 存储按钮级别权限 */
-    SET_PERMS(permissions: Array<string>) {
-      this.permissions = permissions;
-    },
-    /** 存储前端生成的验证码 */
-    SET_VERIFYCODE(verifyCode: string) {
-      this.verifyCode = verifyCode;
-    },
-    /** 存储登录页面显示哪个组件 */
-    SET_CURRENTPAGE(value: number) {
-      this.currentPage = value;
-    },
-    /** 存储是否勾选了登录页的免登录 */
-    SET_ISREMEMBERED(bool: boolean) {
-      this.isRemembered = bool;
-    },
-    /** 设置登录页的免登录存储几天 */
-    SET_LOGINDAY(value: number) {
-      this.loginDay = Number(value);
-    },
-    /** 登入 */
-    async loginByUsername(data) {
-      return new Promise<UserResult>((resolve, reject) => {
-        getLogin(data)
-          .then(async data => {
-            if (data?.success) {
-              // 更新用户信息
-              this.username = data.data.user.name;
-              this.nickname = data.data.user.name;
-              this.roles = data.data.user.roles || [];
-              this.permissions = data.data.user.permissions || [];
+export const useUserStore = defineStore("pure-user", () => {
+  // 状态
+  const logginedIn = ref(false);
+  // 用户信息
+  const avatar = ref(
+    storageLocal().getItem<DataInfo<number>>(userKey)?.avatar ?? ""
+  );
+  const username = ref(
+    storageLocal().getItem<DataInfo<number>>(userKey)?.username ?? ""
+  );
+  const nickname = ref(
+    storageLocal().getItem<DataInfo<number>>(userKey)?.nickname ?? ""
+  );
+  const roles = ref(
+    storageLocal().getItem<DataInfo<number>>(userKey)?.roles ?? []
+  );
+  const permissions = ref(
+    storageLocal().getItem<DataInfo<number>>(userKey)?.permissions ?? []
+  );
+  const verifyCode = ref("");
+  const currentPage = ref(0);
+  const isRemembered = ref(false);
+  const loginDay = ref(7);
 
-              // 保存Token（适配新的响应格式）
-              const tokenData = {
-                accessToken: data.data.token.accessToken,
-                refreshToken: data.data.token.refreshToken, // 如果后端没有单独的refreshToken，暂时使用同一个
-                expires: data.data.token.accessExpiredIn, // 24小时后过期
-                username: data.data.user.name,
-                nickname: data.data.user.name,
-                avatar: data.data.user.avatar,
-                roles: data.data.user.roles || [],
-                permissions: data.data.user.permissions || []
-              };
-              setToken(tokenData);
-            }
+  // 方法
+  /** 存储头像 */
+  const SET_AVATAR = (value: string) => {
+    avatar.value = value;
+  };
+
+  /** 存储用户名 */
+  const SET_USERNAME = (value: string) => {
+    username.value = value;
+  };
+
+  /** 存储昵称 */
+  const SET_NICKNAME = (value: string) => {
+    nickname.value = value;
+  };
+
+  /** 存储角色 */
+  const SET_ROLES = (value: Array<string>) => {
+    roles.value = value;
+  };
+
+  /** 存储按钮级别权限 */
+  const SET_PERMS = (value: Array<string>) => {
+    permissions.value = value;
+  };
+
+  /** 存储前端生成的验证码 */
+  const SET_VERIFYCODE = (value: string) => {
+    verifyCode.value = value;
+  };
+
+  /** 存储登录页面显示哪个组件 */
+  const SET_CURRENTPAGE = (value: number) => {
+    currentPage.value = value;
+  };
+
+  /** 存储是否勾选了登录页的免登录 */
+  const SET_ISREMEMBERED = (bool: boolean) => {
+    isRemembered.value = bool;
+  };
+
+  /** 设置登录页的免登录存储几天 */
+  const SET_LOGINDAY = (value: number) => {
+    loginDay.value = Number(value);
+  };
+
+  /** 登入 */
+  const loginByUsername = async (data): Promise<UserResult> => {
+    return new Promise<UserResult>((resolve, reject) => {
+      getLogin(data)
+        .then(async data => {
+          if (data?.success) {
+            // 更新用户信息
+            username.value = data.data.user.name;
+            nickname.value = data.data.user.name;
+            roles.value = data.data.user.roles || [];
+            permissions.value = data.data.user.permissions || [];
+
+            // 保存Token（适配新的响应格式）
+            const tokenData = {
+              accessToken: data.data.token.accessToken,
+              refreshToken: data.data.token.refreshToken, // 如果后端没有单独的refreshToken，暂时使用同一个
+              expires: data.data.token.accessExpiredIn, // 24小时后过期
+              username: data.data.user.name,
+              nickname: data.data.user.name,
+              avatar: data.data.user.avatar,
+              roles: data.data.user.roles || [],
+              permissions: data.data.user.permissions || []
+            };
+            setToken(tokenData);
+          }
+          resolve(data);
+        })
+        .catch(error => {
+          reject(error);
+        });
+    });
+  };
+
+  /** 前端登出（不调用接口） */
+  const logOut = () => {
+    username.value = "";
+    roles.value = [];
+    permissions.value = [];
+    removeToken();
+    useMultiTagsStoreHook().handleTags("equal", [...routerArrays]);
+    resetRouter();
+    router.push("/login");
+  };
+
+  /** 刷新`token` */
+  const handRefreshToken = async (data): Promise<RefreshTokenResult> => {
+    return new Promise<RefreshTokenResult>((resolve, reject) => {
+      refreshTokenApi(data)
+        .then(data => {
+          if (data) {
+            // 适配新的响应格式
+            const tokenData = {
+              accessToken: data.data.token.accessToken,
+              refreshToken: data.data.token.refreshToken,
+              expires: data.data.token.accessExpiredIn // 24小时后过期
+            };
+            setToken(tokenData);
             resolve(data);
-          })
-          .catch(error => {
-            reject(error);
+          }
+        })
+        .catch(error => {
+          message("刷新token失败，请重新登录", {
+            type: "error"
           });
-      });
+          logOut();
+          reject(error);
+        });
+    });
+  };
+
+  watch(
+    logginedIn,
+    (newToken, oldToken) => {
+      if (newToken && !oldToken) {
+        // token 存在且发生变化 -> 连接 WebSocket
+        console.log("Token changed, connecting WebSocket...");
+        const socketStore = useSocketStore();
+        socketStore.connect();
+      } else if (!newToken && oldToken) {
+        // token 被清空 -> 断开 WebSocket
+        console.log("Token cleared, disconnecting WebSocket...");
+        const socketStore = useSocketStore();
+        socketStore.disConnect();
+      }
     },
-    /** 前端登出（不调用接口） */
-    logOut() {
-      this.username = "";
-      this.roles = [];
-      this.permissions = [];
-      removeToken();
-      useMultiTagsStoreHook().handleTags("equal", [...routerArrays]);
-      resetRouter();
-      router.push("/login");
-    },
-    /** 刷新`token` */
-    async handRefreshToken(data) {
-      return new Promise<RefreshTokenResult>((resolve, reject) => {
-        refreshTokenApi(data)
-          .then(data => {
-            if (data) {
-              // 适配新的响应格式
-              const tokenData = {
-                accessToken: data.data.token.accessToken,
-                refreshToken: data.data.token.refreshToken,
-                expires: data.data.token.accessExpiredIn // 24小时后过期
-              };
-              setToken(tokenData);
-              resolve(data);
-            }
-          })
-          .catch(error => {
-            message("刷新token失败，请重新登录", {
-              type: "error"
-            });
-            this.logOut();
-            reject(error);
-          });
-      });
-    }
-  }
+    { immediate: true }
+  ); // immediate: true 会在初始化时立即执行
+
+  return {
+    // 状态
+    avatar,
+    username,
+    nickname,
+    roles,
+    permissions,
+    verifyCode,
+    currentPage,
+    isRemembered,
+    loginDay,
+    logginedIn,
+    // 方法
+    SET_AVATAR,
+    SET_USERNAME,
+    SET_NICKNAME,
+    SET_ROLES,
+    SET_PERMS,
+    SET_VERIFYCODE,
+    SET_CURRENTPAGE,
+    SET_ISREMEMBERED,
+    SET_LOGINDAY,
+    loginByUsername,
+    logOut,
+    handRefreshToken
+  };
 });
 
 export function useUserStoreHook() {
