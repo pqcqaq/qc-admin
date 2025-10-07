@@ -123,8 +123,6 @@ export function removeToken() {
   Cookies.remove(TokenKey);
   Cookies.remove(multipleTabsKey);
   storageLocal().removeItem(userKey);
-  const userStore = useUserStoreHook();
-  userStore.logginedIn = false;
 }
 
 /** 格式化token（jwt格式） */

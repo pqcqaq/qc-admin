@@ -14,7 +14,13 @@ import {
   refreshTokenApi
 } from "qc-admin-api-common/auth";
 import { useMultiTagsStoreHook } from "./multiTags";
-import { type DataInfo, setToken, removeToken, userKey } from "@/utils/auth";
+import {
+  type DataInfo,
+  setToken,
+  removeToken,
+  userKey,
+  getToken
+} from "@/utils/auth";
 import { message } from "@/utils/message";
 import { useSocketStore } from "./socket";
 
@@ -130,6 +136,7 @@ export const useUserStore = defineStore("pure-user", () => {
     useMultiTagsStoreHook().handleTags("equal", [...routerArrays]);
     resetRouter();
     router.push("/login");
+    logginedIn.value = false;
   };
 
   /** 刷新`token` */
@@ -161,7 +168,7 @@ export const useUserStore = defineStore("pure-user", () => {
   watch(
     logginedIn,
     (newToken, oldToken) => {
-      if (newToken && !oldToken) {
+      if (newToken) {
         // token 存在且发生变化 -> 连接 WebSocket
         console.log("Token changed, connecting WebSocket...");
         const socketStore = useSocketStore();
@@ -171,6 +178,11 @@ export const useUserStore = defineStore("pure-user", () => {
         console.log("Token cleared, disconnecting WebSocket...");
         const socketStore = useSocketStore();
         socketStore.disConnect();
+      } else if (!newToken && oldToken === undefined) {
+        const token = getToken();
+        if (token && token.accessToken) {
+          logginedIn.value = true;
+        }
       }
     },
     { immediate: true }
