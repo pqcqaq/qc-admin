@@ -259,14 +259,19 @@ const handleTest = () => {
 };
 
 const handleTestMulti = () => {
-  for (let i = 0; i < 15; i++) {
-    const topic = `test_handler/${i}`;
+  let count = 0;
+  const id = setInterval(() => {
+    if (count > 50) {
+      clearInterval(id);
+      return;
+    }
+    const topic = `test_handler/${count}`;
     socketStore
       .createChannel<string, string>(topic, msg => {
         console.log(`频道 ${topic} 消息: ${msg}`, { type: "info" });
       })
-      .then(({ send, onClose }) => {
-        message(`频道 ${topic} 创建成功`, { type: "success" });
+      .then(({ send, onClose, channelId }) => {
+        message(`频道 ${topic} 创建成功 id: ${channelId}`, { type: "success" });
 
         let count = 0;
         const id = setInterval(() => {
@@ -283,7 +288,8 @@ const handleTestMulti = () => {
       .catch(err => {
         message(`频道 ${topic} 创建失败: ${err.message}`, { type: "error" });
       });
-  }
+    count++;
+  }, 100);
 };
 
 const handleTestPanic = () => {
