@@ -113,7 +113,7 @@ const columns: TableColumnList = [
   {
     label: "请求方式",
     prop: "method",
-    minWidth: 50
+    minWidth: 100
   },
   // path
   {

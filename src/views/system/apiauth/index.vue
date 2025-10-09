@@ -77,7 +77,8 @@ const searchParams = reactive({
   method: "",
   path: "",
   isPublic: "",
-  isActive: ""
+  isActive: "",
+  type: "http"
 });
 
 // 查看数据
@@ -113,7 +114,8 @@ const getTableData = async () => {
           ? true
           : searchParams.isActive === "false"
             ? false
-            : undefined
+            : undefined,
+      type: searchParams.type
     };
     const response = await getAPIAuthListWithPagination(params);
     dataList.value = response.data || [];

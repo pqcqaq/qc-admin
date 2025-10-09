@@ -7,6 +7,24 @@
     @close="handleClose"
   >
     <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
+      <!-- Type -->
+      <el-form-item label="类型" prop="type" label-width="90">
+        <template v-slot:label>
+          <span>API类型</span>
+          <el-tooltip
+            content="Websocket类型为client操作时允许的Topic"
+            effect="dark"
+            placement="right"
+          >
+            <el-icon><QuestionFilled /></el-icon>
+          </el-tooltip>
+        </template>
+        <el-select v-model="form.type" placeholder="请选择类型">
+          <el-option label="HTTP" value="http" />
+          <el-option label="WebSocket" value="websocket" />
+        </el-select>
+      </el-form-item>
+      <!-- 提示信息 -->
       <el-form-item label="名称" prop="name">
         <el-input v-model="form.name" placeholder="请输入名称" />
       </el-form-item>
@@ -18,7 +36,7 @@
           placeholder="请输入描述"
         />
       </el-form-item>
-      <el-form-item label="请求方法" prop="method">
+      <el-form-item v-if="form.type === 'http'" label="请求方法" prop="method">
         <el-select v-model="form.method" placeholder="请选择请求方法">
           <el-option label="GET" value="GET" />
           <el-option label="POST" value="POST" />
@@ -29,8 +47,20 @@
           <el-option label="OPTIONS" value="OPTIONS" />
         </el-select>
       </el-form-item>
-      <el-form-item label="请求路径" prop="path">
-        <el-input v-model="form.path" placeholder="请输入请求路径" />
+      <el-form-item v-else label="操作类型" prop="method">
+        <el-select v-model="form.method" placeholder="请选择请求方法">
+          <el-option label="Subscribe" value="Subscribe" />
+          <el-option label="ChannelStart" value="ChannelStart" />
+        </el-select>
+      </el-form-item>
+      <el-form-item
+        :label="`${form.type === 'http' ? '请求路径' : 'Topic'}`"
+        prop="path"
+      >
+        <el-input
+          v-model="form.path"
+          :placeholder="`请输入${form.type === 'http' ? '请求路径' : 'Topic'}`"
+        />
       </el-form-item>
       <el-form-item label="是否公开" prop="isPublic">
         <el-switch
@@ -71,6 +101,8 @@ import { type FormInstance } from "element-plus";
 import type { APIAuth } from "qc-admin-api-common/api_auth";
 import PermissionSelector from "@/components/Permission/PermissionSelector.vue";
 import { Permission } from "qc-admin-api-common/rbac";
+import { ElTooltip, ElIcon } from "element-plus";
+import { QuestionFilled } from "@element-plus/icons-vue";
 
 interface FormData {
   id: string;
@@ -81,6 +113,7 @@ interface FormData {
   isPublic: boolean;
   isActive: boolean;
   permissions?: Permission[];
+  type: "http" | "websocket";
 }
 
 // 定义 props
@@ -106,7 +139,7 @@ const visible = computed({
 });
 
 const dialogTitle = computed(() => {
-  return props.type === "add" ? "新增用户" : "编辑用户";
+  return props.type === "add" ? "新增API认证" : "编辑API认证";
 });
 
 // 表单数据
@@ -118,7 +151,8 @@ const form = reactive<FormData>({
   path: "",
   isPublic: false,
   isActive: true,
-  permissions: []
+  permissions: [],
+  type: "http"
 });
 
 // 表单验证规则
@@ -134,7 +168,8 @@ const rules = {
   method: [{ required: true, message: "请选择请求方法", trigger: "change" }],
   path: [{ required: true, message: "请输入请求路径", trigger: "blur" }],
   isPublic: [{ required: true, message: "请选择是否公开", trigger: "change" }],
-  isActive: [{ required: true, message: "请选择状态", trigger: "change" }]
+  isActive: [{ required: true, message: "请选择状态", trigger: "change" }],
+  type: [{ required: true, message: "请选择类型", trigger: "change" }]
 };
 
 // 重置表单
@@ -143,7 +178,7 @@ const resetForm = () => {
     id: "",
     name: "",
     description: "",
-    method: "",
+    method: "GET",
     path: "",
     isPublic: false,
     isActive: true,
@@ -181,6 +216,18 @@ watch(
       nextTick(() => {
         formRef.value?.clearValidate();
       });
+    }
+  }
+);
+
+// 监听form变化，type改变时，修改method的默认值
+watch(
+  () => form.type,
+  newType => {
+    if (newType === "http") {
+      form.method = "GET";
+    } else if (newType === "websocket") {
+      form.method = "Subscribe";
     }
   }
 );

@@ -51,6 +51,13 @@
           <el-option label="禁用" value="false" />
         </el-select>
       </el-form-item>
+      <!-- 类型 http/websocket -->
+      <el-form-item label="类型">
+        <el-select v-model="searchForm.type" placeholder="请选择类型" clearable>
+          <el-option label="HTTP" value="http" />
+          <el-option label="WebSocket" value="websocket" />
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleSearch">查询</el-button>
         <el-button @click="resetSearch">重置</el-button>
@@ -68,6 +75,7 @@ interface SearchFormData {
   path: string;
   isPublic: string;
   isActive: string;
+  type: string;
 }
 
 // 定义 emits
@@ -82,7 +90,8 @@ const searchForm = reactive<SearchFormData>({
   method: "",
   path: "",
   isPublic: "",
-  isActive: ""
+  isActive: "",
+  type: "http"
 });
 
 // 搜索
