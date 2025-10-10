@@ -129,6 +129,13 @@ export const useUserStore = defineStore("pure-user", () => {
 
   /** 前端登出（不调用接口） */
   const logOut = () => {
+    avatar.value = "";
+    nickname.value = "";
+    verifyCode.value = "";
+    currentPage.value = 0;
+    isRemembered.value = false;
+    loginDay.value = 7;
+    logginedIn.value = false;
     username.value = "";
     roles.value = [];
     permissions.value = [];
@@ -136,7 +143,6 @@ export const useUserStore = defineStore("pure-user", () => {
     useMultiTagsStoreHook().handleTags("equal", [...routerArrays]);
     resetRouter();
     router.push("/login");
-    logginedIn.value = false;
   };
 
   /** 刷新`token` */
