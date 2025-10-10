@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="用户详情"
+    title="详情"
     width="600px"
     draggable
     @close="handleClose"
@@ -33,7 +33,7 @@
           <el-tag
             v-for="permission in data.permissions"
             :key="permission.id"
-            style="margin-bottom: 4px; margin-right: 4px"
+            style=" margin-right: 4px;margin-bottom: 4px"
             >{{ permission.action }}</el-tag
           >
         </div>

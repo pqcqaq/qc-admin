@@ -33,7 +33,7 @@
         查看
       </el-button>
       <el-popconfirm
-        :title="`是否确认删除用户${row.name}?`"
+        :title="`是否确认删除 ${row.name}?`"
         @confirm="handleDelete(row)"
       >
         <template #reference>

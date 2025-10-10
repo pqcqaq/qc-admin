@@ -15,7 +15,7 @@
       <!-- 搜索表单组件 -->
       <SearchForm @search="handleSearch" @reset="handleReset" />
 
-      <!-- 用户表格组件 -->
+      <!-- 表格组件 -->
       <ApiAuthTable
         :data-list="dataList"
         :pagination="pagination"
@@ -93,7 +93,7 @@ const pagination = reactive({
   background: true
 });
 
-// 获取用户列表
+// 获取列表
 const getTableData = async () => {
   loading.value = true;
   try {
