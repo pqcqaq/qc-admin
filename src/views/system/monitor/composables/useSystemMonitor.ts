@@ -5,12 +5,22 @@ import {
   getSystemMonitorHistory
 } from "qc-admin-api-common/system_monitor";
 import { message } from "@/utils/message";
+import { useSocketStore } from "@/store/modules/socket";
 
 export function useSystemMonitor() {
   const loading = ref(false);
   const currentStatus = ref<SystemMonitor | null>(null);
   const historyData = ref<SystemMonitor[]>([]);
   const timeRange = ref(1); // 默认1小时
+
+  const socketStore = useSocketStore();
+
+  socketStore.hookOnMounted("system/monitor/update", (data: SystemMonitor) => {
+    currentStatus.value = data;
+    // 直接拼接到历史数据中
+    const omitLast = historyData.value.slice(0, -1);
+    historyData.value = [data, ...omitLast];
+  });
 
   // 获取当前系统状态
   const fetchCurrentStatus = async () => {

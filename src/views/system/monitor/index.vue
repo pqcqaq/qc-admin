@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, nextTick } from "vue";
+import { onMounted, nextTick } from "vue";
 import {
   StatusCards,
   SystemInfo,
@@ -51,47 +51,21 @@ const {
   fetchHistoryData
 } = useSystemMonitor();
 
-// 自动刷新定时器
-let refreshTimer: number | null = null;
-
-// 处理刷新
-const handleRefresh = async () => {
-  await fetchCurrentStatus();
-  await fetchHistoryData();
-};
-
 // 处理时间范围变化
 const handleTimeRangeChange = async (value: number) => {
   timeRange.value = value;
   await fetchHistoryData();
 };
 
-// 启动自动刷新
-const startAutoRefresh = () => {
-  refreshTimer = window.setInterval(() => {
-    fetchCurrentStatus();
-    fetchHistoryData();
-  }, 30000); // 30秒刷新一次
-};
-
-// 停止自动刷新
-const stopAutoRefresh = () => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer);
-    refreshTimer = null;
-  }
+const handleRefresh = async () => {
+  await fetchCurrentStatus();
+  await nextTick();
+  await fetchHistoryData();
 };
 
 // 生命周期
 onMounted(async () => {
-  await fetchCurrentStatus();
-  await nextTick();
-  await fetchHistoryData();
-  startAutoRefresh();
-});
-
-onBeforeUnmount(() => {
-  stopAutoRefresh();
+  await handleRefresh();
 });
 </script>
 
