@@ -42,7 +42,7 @@ export function useSystemMonitor() {
   const fetchHistoryData = async () => {
     try {
       const response = await getSystemMonitorHistory({
-        limit: 100,
+        limit: timeRange.value * 100 > 10000 ? 10000 : timeRange.value * 100, // 最多1000条
         hours: timeRange.value
       });
       historyData.value = response.data;

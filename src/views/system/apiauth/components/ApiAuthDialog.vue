@@ -193,6 +193,7 @@ watch(
     if (newVisible && newData && props.type === "edit") {
       Object.assign(form, {
         id: newData.id,
+        type: newData.type,
         name: newData.name,
         description: newData.description,
         method: newData.method,
@@ -224,6 +225,9 @@ watch(
 watch(
   () => form.type,
   newType => {
+    if (form.id !== "") {
+      return; // 编辑状态下不修改
+    }
     if (newType === "http") {
       form.method = "GET";
     } else if (newType === "websocket") {
