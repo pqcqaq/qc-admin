@@ -1,6 +1,6 @@
 # 🎨 QC-Admin Management System Frontend
 
-[![license](https://img.shields.io/github/license/qc-admin/qc-admin.svg)](LICENSE)
+[![license](https://img.shields.io/github/license/pqcqaq/qc-admin.svg)](LICENSE)
 [![Vue](https://img.shields.io/badge/Vue-3.x-brightgreen.svg)](https://vuejs.org/)
 [![Element Plus](https://img.shields.io/badge/Element%20Plus-latest-409eff.svg)](https://element-plus.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
@@ -196,7 +196,7 @@ qc-admin/
 ### Resources
 
 - [Online Preview](https://qc-admin-thin.netlify.app/)
-- [Issues](https://github.com/qc-admin/qc-admin/issues)
+- [Issues](https://github.com/pqcqaq/qc-admin/issues)
 
 ## 🤝 Contributing
 
