@@ -263,6 +263,49 @@
         </div>
       </div>
     </el-card>
+    <!-- 重置所有 -->
+    <div style="margin-top: 20px; text-align: right">
+      <el-button
+        type="warning"
+        @click="
+          () => {
+            basicSelection = [];
+            basicCurrent = '';
+            levelLimitSelection = [];
+            levelLimitCurrent = '';
+            cityLimitSelection = [];
+            cityLimitCurrent = '';
+            parentAreaId = '';
+            parentLimitSelection = [];
+            parentLimitCurrent = '';
+            lazySelection = [];
+            lazyCurrent = '';
+            strictlySelection = [];
+            strictlyCurrent = '';
+            strictlyWithLevelSelection = [];
+            strictlyWithLevelCurrent = '';
+            noClearSelection = [];
+            noClearCurrent = '';
+            disabledSelection = [];
+            disabledCurrent = '';
+            noFullPathSelection = [];
+            noFullPathCurrent = '';
+            collapseTagsSelection = [];
+            collapseTagsCurrent = '';
+            formData.provinceIds = [];
+            formData.provinceId = '';
+            formData.cityIds = [];
+            formData.cityId = '';
+            formData.districtIds = [];
+            formData.districtId = '';
+            eventSelection = [];
+            eventCurrent = '';
+            eventLogs = [];
+          }
+        "
+        >重置所有</el-button
+      >
+    </div>
   </div>
 </template>
 

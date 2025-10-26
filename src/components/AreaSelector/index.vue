@@ -127,6 +127,13 @@ const lazyLoad = async (node: any, resolve: any) => {
       areas = response.data || [];
     }
 
+    // 如果没有子数据,说明当前节点就是叶子节点
+    // 返回空数组即可,cascader会自动将其标记为可选择的叶子节点
+    if (!areas || areas.length === 0) {
+      resolve([]);
+      return;
+    }
+
     // 转换数据格式
     const nodes = areas.map(area => {
       const isLeaf = shouldBeLeaf(area);
