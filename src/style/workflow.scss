@@ -3,6 +3,10 @@
 
 /* this contains the default theme, these are optional styles */
 @import "@vue-flow/core/dist/theme-default.css";
+@import "@vue-flow/minimap/dist/style.css";
+
+// import default controls styles
+@import "@vue-flow/controls/dist/style.css";
 
 .vue-flow__node-custom {
   padding: 8px;
