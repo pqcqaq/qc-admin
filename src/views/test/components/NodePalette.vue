@@ -17,10 +17,10 @@
     <!-- 节点列表 -->
     <transition name="slide-up">
       <div v-show="!isCollapsed" class="palette-content">
-        <div class="palette-header">
+        <!-- <div class="palette-header">
           <span class="header-title">拖拽节点到画布</span>
           <span class="header-subtitle">或拖拽到此处删除</span>
-        </div>
+        </div> -->
         <div class="node-list">
           <div
             v-for="template in nodeTemplates"
@@ -59,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onUnmounted, watch } from "vue";
 import { ArrowUp, Delete } from "@element-plus/icons-vue";
 import { nodeTemplates } from "./nodeConfig";
 import type { NodeTemplate } from "./types";
@@ -129,41 +129,54 @@ function onDropToDelete(event: DragEvent) {
 }
 
 // 检查鼠标是否在面板区域内
-function isMouseOverPalette(event: DragEvent): boolean {
+function isMouseOverPalette(clientX: number, clientY: number): boolean {
   if (!paletteRef.value || isCollapsed.value) return false;
 
   const rect = paletteRef.value.getBoundingClientRect();
   return (
-    event.clientX >= rect.left &&
-    event.clientX <= rect.right &&
-    event.clientY >= rect.top &&
-    event.clientY <= rect.bottom
+    clientX >= rect.left &&
+    clientX <= rect.right &&
+    clientY >= rect.top &&
+    clientY <= rect.bottom
   );
 }
 
-// 全局拖拽监听器
-function handleGlobalDrag(event: DragEvent) {
-  // 只有当有节点正在被拖拽时才检查
+// 鼠标移动监听器
+function handleMouseMove(event: MouseEvent) {
   if (props.draggingNodeId) {
-    isDraggingOver.value = isMouseOverPalette(event);
+    const isOver = isMouseOverPalette(event.clientX, event.clientY);
+    isDraggingOver.value = isOver;
   }
 }
 
-function handleGlobalDragEnd() {
-  // 拖拽结束时清除状态
+// 鼠标抬起监听器
+function handleMouseUp() {
   isDraggingOver.value = false;
 }
 
-// 组件挂载时添加全局监听器
-onMounted(() => {
-  document.addEventListener("drag", handleGlobalDrag);
-  document.addEventListener("dragend", handleGlobalDragEnd);
-});
+// 监听 draggingNodeId 的变化
+watch(
+  () => props.draggingNodeId,
+  (newId, oldId) => {
+    console.log("draggingNodeId changed:", oldId, "->", newId);
 
-// 组件卸载时移除全局监听器
+    if (newId) {
+      // 开始拖拽，添加鼠标移动监听
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    } else {
+      // 结束拖拽，移除监听器并清除状态
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      isDraggingOver.value = false;
+    }
+  }
+);
+
+// 组件卸载时清理
 onUnmounted(() => {
-  document.removeEventListener("drag", handleGlobalDrag);
-  document.removeEventListener("dragend", handleGlobalDragEnd);
+  document.removeEventListener("mousemove", handleMouseMove);
+  document.removeEventListener("mouseup", handleMouseUp);
 });
 
 // 暴露方法给父组件

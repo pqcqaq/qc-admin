@@ -1,5 +1,11 @@
 <template>
-  <div class="flow-container" @contextmenu="onContextMenu">
+  <div
+    class="flow-container"
+    @contextmenu="onContextMenu"
+    @mousedown="onCanvasMouseDown"
+    @mousemove="onCanvasMouseMove"
+    @mouseup="onCanvasMouseUp"
+  >
     <VueFlow
       id="workflow-canvas"
       ref="vueFlowRef"
@@ -15,8 +21,6 @@
       :connect-on-click="true"
       @node-click="onNodeClick"
       @edge-click="onEdgeClick"
-      @node-drag-start="onNodeDragStart"
-      @node-drag-stop="onNodeDragStop"
       @node-context-menu="onNodeContextMenu"
       @edge-context-menu="onEdgeContextMenu"
       @pane-context-menu="onPaneContextMenu"
@@ -211,6 +215,8 @@ const selectedNode = computed(() => {
 const darkMode = ref(false);
 const isDraggingFromPalette = ref(false);
 const draggingNodeId = ref<string | null>(null);
+const mouseDownPos = ref<{ x: number; y: number } | null>(null);
+const isDragging = ref(false);
 
 // 右键菜单状态
 const contextMenu = ref<{
@@ -388,14 +394,50 @@ function onEdgeClick({ edge }: { edge: any }) {
   console.log("Edge clicked:", edge);
 }
 
-function onNodeDragStart({ node }: { node: Node }) {
-  // 当从画布拖拽节点时，记录正在拖拽的节点ID
-  draggingNodeId.value = node.id;
-  workflowRef.value?.setSelectedNodeId(node.id);
+// 画布鼠标按下事件
+function onCanvasMouseDown(event: MouseEvent) {
+  // 检查是否点击在节点上
+  const target = event.target as HTMLElement;
+  const nodeElement = target.closest(".vue-flow__node");
+
+  if (nodeElement) {
+    const nodeId = nodeElement.getAttribute("data-id");
+    if (nodeId) {
+      console.log("Mouse down on node:", nodeId);
+      // 记录鼠标按下位置和节点ID，但不立即设置 draggingNodeId
+      mouseDownPos.value = { x: event.clientX, y: event.clientY };
+      isDragging.value = false;
+      // 暂存节点ID，等待移动
+      (event.currentTarget as any)._pendingDragNodeId = nodeId;
+    }
+  }
 }
 
-function onNodeDragStop() {
-  // 拖拽结束时清除
+// 画布鼠标移动事件
+function onCanvasMouseMove(event: MouseEvent) {
+  if (mouseDownPos.value && !isDragging.value) {
+    // 计算移动距离
+    const dx = event.clientX - mouseDownPos.value.x;
+    const dy = event.clientY - mouseDownPos.value.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // 如果移动距离超过5像素，认为是拖拽
+    if (distance > 5) {
+      isDragging.value = true;
+      const nodeId = (event.currentTarget as any)._pendingDragNodeId;
+      if (nodeId) {
+        console.log("Start dragging node:", nodeId);
+        draggingNodeId.value = nodeId;
+      }
+    }
+  }
+}
+
+// 画布鼠标抬起事件
+function onCanvasMouseUp() {
+  console.log("Mouse up, clearing draggingNodeId");
+  mouseDownPos.value = null;
+  isDragging.value = false;
   draggingNodeId.value = null;
 }
 
