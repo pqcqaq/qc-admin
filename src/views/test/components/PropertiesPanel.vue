@@ -120,13 +120,13 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import type { Node } from "@vue-flow/core";
 import { ArrowRight, Delete, InfoFilled } from "@element-plus/icons-vue";
-import type { FlowNode } from "./types";
 import { NodeTypeEnum } from "./types";
 
 interface Props {
   darkMode?: boolean;
-  selectedNode: FlowNode | null;
+  selectedNode: Node | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -134,7 +134,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  updateNode: [nodeId: string, updates: Partial<FlowNode>];
+  updateNode: [nodeId: string, updates: Partial<Node>];
   deleteNode: [nodeId: string];
 }>();
 

@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="paletteRef"
     class="node-palette"
     :class="{ collapsed: isCollapsed, dark: darkMode }"
     @dragover.prevent
@@ -58,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { ArrowUp, Delete } from "@element-plus/icons-vue";
 import { nodeTemplates } from "./nodeConfig";
 import type { NodeTemplate } from "./types";
@@ -66,10 +67,12 @@ import type { NodeTemplate } from "./types";
 // Props
 interface Props {
   darkMode?: boolean;
+  draggingNodeId?: string | null;
 }
 
-withDefaults(defineProps<Props>(), {
-  darkMode: false
+const props = withDefaults(defineProps<Props>(), {
+  darkMode: false,
+  draggingNodeId: null
 });
 
 const emit = defineEmits<{
@@ -79,6 +82,7 @@ const emit = defineEmits<{
 
 const isCollapsed = ref(false);
 const isDraggingOver = ref(false);
+const paletteRef = ref<HTMLElement | null>(null);
 
 /**
  * 切换面板展开/收起状态
@@ -109,26 +113,58 @@ function onDropToDelete(event: DragEvent) {
   event.preventDefault();
   isDraggingOver.value = false;
 
-  if (!event.dataTransfer) return;
-
   // 检查是否是从画布拖拽过来的节点
-  const nodeId = event.dataTransfer.getData("application/vueflow-node-id");
-  if (nodeId) {
-    emit("deleteNode", nodeId);
+  if (props.draggingNodeId) {
+    emit("deleteNode", props.draggingNodeId);
+    return;
+  }
+
+  // 兼容旧的方式（通过 dataTransfer）
+  if (event.dataTransfer) {
+    const nodeId = event.dataTransfer.getData("application/vueflow-node-id");
+    if (nodeId) {
+      emit("deleteNode", nodeId);
+    }
   }
 }
 
-// 监听拖拽进入和离开
-function onDragEnter() {
-  isDraggingOver.value = true;
+// 检查鼠标是否在面板区域内
+function isMouseOverPalette(event: DragEvent): boolean {
+  if (!paletteRef.value || isCollapsed.value) return false;
+
+  const rect = paletteRef.value.getBoundingClientRect();
+  return (
+    event.clientX >= rect.left &&
+    event.clientX <= rect.right &&
+    event.clientY >= rect.top &&
+    event.clientY <= rect.bottom
+  );
 }
 
-function onDragLeave(event: DragEvent) {
-  // 只有当离开整个面板时才设置为false
-  if (event.currentTarget === event.target) {
-    isDraggingOver.value = false;
+// 全局拖拽监听器
+function handleGlobalDrag(event: DragEvent) {
+  // 只有当有节点正在被拖拽时才检查
+  if (props.draggingNodeId) {
+    isDraggingOver.value = isMouseOverPalette(event);
   }
 }
+
+function handleGlobalDragEnd() {
+  // 拖拽结束时清除状态
+  isDraggingOver.value = false;
+}
+
+// 组件挂载时添加全局监听器
+onMounted(() => {
+  document.addEventListener("drag", handleGlobalDrag);
+  document.addEventListener("dragend", handleGlobalDragEnd);
+});
+
+// 组件卸载时移除全局监听器
+onUnmounted(() => {
+  document.removeEventListener("drag", handleGlobalDrag);
+  document.removeEventListener("dragend", handleGlobalDragEnd);
+});
 
 // 暴露方法给父组件
 defineExpose({
