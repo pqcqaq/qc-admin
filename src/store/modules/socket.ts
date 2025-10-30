@@ -45,6 +45,7 @@ export const useSocketStore = defineStore("socket", () => {
             throw new Error(res.data.message || "刷新token失败");
           });
       },
+      debug: !!import.meta.env.DEV,
       errorHandler: msg => {
         console.error("WebSocket error:", msg);
       }
@@ -159,7 +160,12 @@ export const useSocketStore = defineStore("socket", () => {
     subscribe: SocketClient["subscribe"];
     unsubscribe: SocketClient["unsubscribe"];
     unsubscribeAll: SocketClient["unsubscribeAll"];
-    hookOnMounted: <T>(topic: string, handler: MessageHandler<T>) => void;
+    hookOnMounted: <T>(
+      topic: string,
+      handler: MessageHandler<T>,
+      errHandler: (err: any) => void,
+      init: MessageHandler<any[]>
+    ) => void;
     sendMessage: SocketClient["sendMessage"];
     createChannel: SocketClient["createChannel"];
     registerChannelOpen: SocketClient["registerChannelOpen"];

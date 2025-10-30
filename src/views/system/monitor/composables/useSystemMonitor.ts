@@ -15,12 +15,19 @@ export function useSystemMonitor() {
 
   const socketStore = useSocketStore();
 
-  socketStore.hookOnMounted("system/monitor/update", (data: SystemMonitor) => {
-    currentStatus.value = data;
-    // 直接拼接到历史数据中
-    const omitLast = historyData.value.slice(0, -1);
-    historyData.value = [data, ...omitLast];
-  });
+  socketStore.hookOnMounted(
+    "system/monitor/update",
+    (data: SystemMonitor) => {
+      currentStatus.value = data;
+      // 直接拼接到历史数据中
+      const omitLast = historyData.value.slice(0, -1);
+      historyData.value = [data, ...omitLast];
+    },
+    undefined,
+    (data: any[]) => {
+      console.log("Init system monitor data received:", data);
+    }
+  );
 
   // 获取当前系统状态
   const fetchCurrentStatus = async () => {
