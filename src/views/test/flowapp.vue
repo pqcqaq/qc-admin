@@ -403,7 +403,8 @@ async function handleSubmitApplication() {
         // 创建应用 - 后端会自动创建默认开始节点
         const newApp = await createApplication({
           ...applicationForm.value,
-          status: "draft"
+          status: "draft",
+          startNodeId: ""
         });
         if (newApp) {
           // 创建成功后加载应用（会加载后端创建的默认开始节点）
