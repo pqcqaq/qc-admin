@@ -96,9 +96,19 @@
           <span class="app-name">{{ currentApplication.name }}</span>
         </div>
         <div class="toolbar-right">
+          <el-tag
+            v-if="hasUnsavedChanges"
+            type="warning"
+            effect="dark"
+            style="margin-right: 10px"
+          >
+            <el-icon><WarningFilled /></el-icon>
+            有未保存的变更
+          </el-tag>
           <el-button
             type="success"
             :loading="saving"
+            :disabled="!hasUnsavedChanges"
             @click="handleSaveWorkflow"
           >
             <el-icon><DocumentChecked /></el-icon>
@@ -259,7 +269,8 @@ import {
   FullScreen,
   Plus,
   ArrowLeft,
-  DocumentChecked
+  DocumentChecked,
+  WarningFilled
 } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox, type FormInstance } from "element-plus";
 
@@ -269,7 +280,8 @@ import PropertiesPanel from "./components/PropertiesPanel.vue";
 import ContextMenu from "./components/ContextMenu.vue";
 
 // 导入类型和配置
-import type { NodeTemplate } from "./components/types";
+import type { EdgeData, NodeTemplate } from "./components/types";
+import { getNodeConnectionRule } from "./components/types";
 import { useWorkflowApplication } from "./composables/useWorkflowApplication";
 
 // 使用 workflow application composable
@@ -279,10 +291,11 @@ const {
   applications,
   loading,
   saving,
+  hasUnsavedChanges,
   loadApplications,
   loadApplication,
   createApplication,
-  updateApplication,
+  updateApplicationInfo,
   deleteApplication,
   cloneApplication,
   saveWorkflow,
@@ -349,8 +362,9 @@ const contextMenu = ref<{
 // 默认边配置
 const defaultEdgeOptions: DefaultEdgeOptions = {
   type: "smoothstep",
-  animated: true,
-  markerEnd: { type: MarkerType.ArrowClosed }
+  animated: false, // 默认不动画，分支边和并行边会单独设置
+  markerEnd: { type: MarkerType.ArrowClosed },
+  style: { strokeWidth: 2 }
 };
 
 /**
@@ -395,7 +409,7 @@ async function handleSubmitApplication() {
     if (valid) {
       if (isEditingApplication.value) {
         // 更新应用
-        await updateApplication(currentApplication.value!.id, {
+        await updateApplicationInfo(currentApplication.value!.id, {
           ...applicationForm.value,
           startNodeId: currentApplication.value!.startNodeId
         });
@@ -590,12 +604,170 @@ function onCanvasMouseUp() {
  * 连接事件处理
  */
 async function onConnect(params: Connection) {
-  await workflow?.addEdge(params);
+  console.log("[onConnect] 创建连接:", params);
 
-  // 连接后自动保存到后端
-  if (currentApplication.value) {
-    await saveWorkflow();
+  // 获取源节点和目标节点信息
+  const sourceNode = workflow?.getAllNodes().find(n => n.id === params.source);
+  const targetNode = workflow?.getAllNodes().find(n => n.id === params.target);
+
+  if (!sourceNode) {
+    console.error("[onConnect] 源节点不存在:", params.source);
+    ElMessage.error("源节点不存在");
+    return;
   }
+
+  if (!targetNode) {
+    console.error("[onConnect] 目标节点不存在:", params.target);
+    ElMessage.error("目标节点不存在");
+    return;
+  }
+
+  console.log("[onConnect] 源节点类型:", sourceNode.type);
+  console.log("[onConnect] 目标节点类型:", targetNode.type);
+  console.log("[onConnect] 源连接点:", params.sourceHandle);
+
+  // 验证连接规则
+  // 1. 不能连接到自己
+  if (params.source === params.target) {
+    ElMessage.warning("不能连接到自己");
+    return;
+  }
+
+  // 2. 获取节点连接规则
+  const sourceRule = getNodeConnectionRule(sourceNode.type);
+  const targetRule = getNodeConnectionRule(targetNode.type);
+
+  // 3. 结束节点不能作为源节点（maxOutputConnections = 0）
+  if (sourceRule.maxOutputConnections === 0) {
+    ElMessage.warning("该节点不能连接到其他节点");
+    return;
+  }
+
+  // 4. 开始节点不能作为目标节点
+  if (targetNode.type === "start") {
+    ElMessage.warning("开始节点不能被其他节点连接");
+    return;
+  }
+
+  // 5. 检查是否已存在相同的连接
+  const existingEdges = workflow?.getAllEdges() || [];
+  const duplicateEdge = existingEdges.find(
+    e =>
+      e.source === params.source &&
+      e.target === params.target &&
+      e.sourceHandle === params.sourceHandle
+  );
+  if (duplicateEdge) {
+    ElMessage.warning("该连接已存在");
+    return;
+  }
+
+  // 6. 检查源节点的输出连接数限制
+  // 判断是否是分支连接或并行子节点连接
+  const isBranchConnection = params.sourceHandle?.includes("-branch-");
+  const isParallelChildConnection = params.sourceHandle?.includes("-parallel-");
+
+  // 如果不是分支连接或并行子节点连接，检查 next_node 连接数限制
+  if (!isBranchConnection && !isParallelChildConnection) {
+    // 检查节点是否可以有 next_node 连接
+    if (!sourceRule.canHaveNextNode) {
+      ElMessage.warning(
+        `${sourceNode.data?.label || "该节点"}不能有普通输出连接，请使用分支连接`
+      );
+      return;
+    }
+
+    // 检查是否已经有 next_node 连接（从主输出点或默认输出点）
+    const existingNextNodeEdges = existingEdges.filter(
+      e =>
+        e.source === params.source &&
+        !e.sourceHandle?.includes("-branch-") &&
+        !e.sourceHandle?.includes("-parallel-")
+    );
+
+    // 如果 maxOutputConnections = 1，只能有一个 next_node 连接
+    if (
+      sourceRule.maxOutputConnections === 1 &&
+      existingNextNodeEdges.length > 0
+    ) {
+      ElMessage.warning("该节点已有一个主输出连接，请先断开现有连接");
+      console.log("[onConnect] 已存在的主输出连接:", existingNextNodeEdges[0]);
+      return;
+    }
+  } else if (isBranchConnection) {
+    // 分支连接验证
+    if (!sourceRule.canHaveBranches) {
+      ElMessage.warning(`${sourceNode.data?.label || "该节点"}不支持分支连接`);
+      return;
+    }
+  }
+
+  type EnhancedConnection = Connection & {
+    data: EdgeData;
+    type: string;
+    animated: boolean;
+    label: string;
+    style: object;
+  };
+
+  // 增强连接参数，添加边类型和数据
+  const enhancedParams: EnhancedConnection = {
+    ...params,
+    data: {},
+    type: "smoothstep",
+    animated: false,
+    label: "",
+    style: { strokeWidth: 2 }
+  };
+
+  // 判断是否是分支连接
+  if (sourceNode.type === "decision" && params.sourceHandle) {
+    // 从 sourceHandle 中提取分支名称
+    // sourceHandle 格式: "{nodeId}-branch-{branchName}"
+    const match = params.sourceHandle.match(/-branch-(.+)$/);
+    if (match) {
+      const branchName = match[1];
+      console.log("[onConnect] 检测到分支连接，分支名称:", branchName);
+
+      enhancedParams.type = "smoothstep";
+      enhancedParams.animated = true;
+      enhancedParams.label = branchName;
+      enhancedParams.style = {
+        strokeWidth: 2,
+        stroke: "#E6A23C" // 橙色表示分支
+      };
+      enhancedParams.data = {
+        branchName,
+        label: branchName
+      };
+    }
+  }
+
+  // 判断是否是并行子节点连接
+  if (
+    sourceNode.type === "parallel" &&
+    params.sourceHandle?.includes("-parallel-")
+  ) {
+    console.log("[onConnect] 检测到并行子节点连接");
+
+    enhancedParams.type = "smoothstep";
+    enhancedParams.animated = true;
+    enhancedParams.label = "并行";
+    enhancedParams.style = {
+      strokeWidth: 2,
+      stroke: "#909399", // 灰色表示并行
+      strokeDasharray: "5,5" // 虚线
+    };
+    enhancedParams.data = {
+      isParallelChild: true,
+      label: "并行"
+    };
+  }
+
+  console.log("[onConnect] 增强后的连接参数:", enhancedParams);
+
+  await workflow?.addEdge(enhancedParams);
+  // 不再自动保存，所有操作在本地完成，用户点击保存按钮时才同步到后端
 }
 
 /**
@@ -624,12 +796,20 @@ async function onDrop(event: DragEvent) {
     });
 
     if (position) {
+      console.log("[onDrop] 拖拽前节点数:", workflow?.getAllNodes().length);
+      console.log(
+        "[onDrop] 拖拽前节点列表:",
+        workflow?.getAllNodes().map(n => ({ id: n.id, label: n.data.label }))
+      );
+
       await workflow?.addNode(template.type, position);
 
-      // 添加节点后自动保存到后端
-      if (currentApplication.value) {
-        await saveWorkflow();
-      }
+      console.log("[onDrop] 拖拽后节点数:", workflow?.getAllNodes().length);
+      console.log(
+        "[onDrop] 拖拽后节点列表:",
+        workflow?.getAllNodes().map(n => ({ id: n.id, label: n.data.label }))
+      );
+      // 不再自动保存，所有操作在本地完成，用户点击保存按钮时才同步到后端
     }
   } catch (error) {
     console.error("Failed to create node:", error);
@@ -645,20 +825,12 @@ function onPaletteDragStart(_template: NodeTemplate) {
  */
 async function handleUpdateNode(nodeId: string, updates: any) {
   await workflow?.updateNode(nodeId, updates);
-
-  // 更新节点后自动保存到后端
-  if (currentApplication.value) {
-    await saveWorkflow();
-  }
+  // 不再自动保存，所有操作在本地完成，用户点击保存按钮时才同步到后端
 }
 
 async function handleDeleteNode(nodeId: string) {
   await workflow?.deleteNode(nodeId);
-
-  // 删除节点后自动保存到后端
-  if (currentApplication.value) {
-    await saveWorkflow();
-  }
+  // 不再自动保存，所有操作在本地完成，用户点击保存按钮时才同步到后端
 }
 
 /**

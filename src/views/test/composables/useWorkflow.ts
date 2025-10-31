@@ -227,11 +227,11 @@ export function useWorkflow(options: WorkflowOptions = {}) {
 
   // 节点类型注册
   const nodeTypes = ref({
-    [NodeTypeEnum.START]: markRaw(StartNode),
-    [NodeTypeEnum.END]: markRaw(EndNode),
-    [NodeTypeEnum.PROCESS]: markRaw(ProcessNode),
-    [NodeTypeEnum.DECISION]: markRaw(DecisionNode),
-    [NodeTypeEnum.PARALLEL]: markRaw(ParallelNode),
+    [NodeTypeEnum.USER_INPUT]: markRaw(StartNode),
+    [NodeTypeEnum.END_NODE]: markRaw(EndNode),
+    [NodeTypeEnum.TODO_TASK_GENERATOR]: markRaw(ProcessNode),
+    [NodeTypeEnum.CONDITION_CHECKER]: markRaw(DecisionNode),
+    [NodeTypeEnum.PARALLEL_EXECUTOR]: markRaw(ParallelNode),
     [NodeTypeEnum.API_CALLER]: markRaw(ApiCallerNode),
     [NodeTypeEnum.DATA_PROCESSOR]: markRaw(DataProcessorNode),
     [NodeTypeEnum.WHILE_LOOP]: markRaw(WhileLoopNode),
@@ -279,6 +279,37 @@ export function useWorkflow(options: WorkflowOptions = {}) {
       const errorMsg = error?.message || "添加节点失败";
       ElMessage.error(errorMsg);
       return { success: false, error: errorMsg };
+    }
+  }
+
+  /**
+   * 更新节点ID（用于将前端临时ID替换为后端返回的ID）
+   */
+  function updateNodeIdInternal(oldId: string, newId: string): void {
+    const nodes = getNodes.value;
+    const edges = getEdges.value;
+
+    // 更新节点ID
+    const updatedNodes = nodes.map(node =>
+      node.id === oldId ? { ...node, id: newId } : node
+    );
+
+    // 更新所有引用该节点的边
+    const updatedEdges = edges.map(edge => ({
+      ...edge,
+      source: edge.source === oldId ? newId : edge.source,
+      target: edge.target === oldId ? newId : edge.target,
+      // 如果边的ID包含节点ID，也需要更新
+      id: edge.id.includes(oldId) ? edge.id.replace(oldId, newId) : edge.id
+    }));
+
+    // 应用更新
+    setNodes(updatedNodes);
+    setEdges(updatedEdges);
+
+    // 如果选中的节点是被更新的节点，也需要更新选中状态
+    if (selectedNodeId.value === oldId) {
+      selectedNodeId.value = newId;
     }
   }
 
@@ -771,6 +802,7 @@ export function useWorkflow(options: WorkflowOptions = {}) {
     // 节点操作
     addNode: addNodeWithCallback,
     updateNode: updateNodeWithCallback,
+    updateNodeId: updateNodeIdInternal,
     deleteNode: deleteNodeWithCallback,
     batchDeleteNodes: batchDeleteNodesWithCallback,
     cloneNode: cloneNodeWithCallback,

@@ -146,9 +146,9 @@ const workflowOptions = {
     }
 
     // 业务逻辑：限制开始节点只能有一个
-    if (context.nodeType === NodeTypeEnum.START) {
+    if (context.nodeType === NodeTypeEnum.USER_INPUT) {
       const startNodes = context.allNodes.filter(
-        (n: any) => n.type === NodeTypeEnum.START
+        (n: any) => n.type === NodeTypeEnum.USER_INPUT
       );
       if (startNodes.length >= 1) {
         return { success: false, error: "只能有一个开始节点" };
@@ -156,9 +156,9 @@ const workflowOptions = {
     }
 
     // 业务逻辑：限制结束节点只能有一个
-    if (context.nodeType === NodeTypeEnum.END) {
+    if (context.nodeType === NodeTypeEnum.END_NODE) {
       const endNodes = context.allNodes.filter(
-        (n: any) => n.type === NodeTypeEnum.END
+        (n: any) => n.type === NodeTypeEnum.END_NODE
       );
       if (endNodes.length >= 1) {
         return { success: false, error: "只能有一个结束节点" };
@@ -247,37 +247,41 @@ const initData = async () => {
   const initialNodes: Node[] = [
     {
       id: "1",
-      type: NodeTypeEnum.START,
-      data: { label: "开始", color: "#67C23A" },
+      type: NodeTypeEnum.USER_INPUT,
+      data: { label: "用户输入", color: "#67C23A" },
       position: { x: 250, y: 50 }
     },
     {
       id: "2",
-      type: NodeTypeEnum.PROCESS,
-      data: { label: "流程节点1", description: "处理数据", color: "#409EFF" },
+      type: NodeTypeEnum.TODO_TASK_GENERATOR,
+      data: {
+        label: "待办任务生成",
+        description: "处理数据",
+        color: "#409EFF"
+      },
       position: { x: 250, y: 180 }
     },
     {
       id: "3",
-      type: NodeTypeEnum.DECISION,
-      data: { label: "判断", description: "条件分支", color: "#E6A23C" },
+      type: NodeTypeEnum.CONDITION_CHECKER,
+      data: { label: "条件检查", description: "条件分支", color: "#E6A23C" },
       position: { x: 250, y: 350 }
     },
     {
       id: "4",
-      type: NodeTypeEnum.PROCESS,
-      data: { label: "流程节点2", color: "#409EFF" },
+      type: NodeTypeEnum.TODO_TASK_GENERATOR,
+      data: { label: "待办任务生成2", color: "#409EFF" },
       position: { x: 100, y: 520 }
     },
     {
       id: "5",
-      type: NodeTypeEnum.PROCESS,
-      data: { label: "流程节点3", color: "#409EFF" },
+      type: NodeTypeEnum.TODO_TASK_GENERATOR,
+      data: { label: "待办任务生成3", color: "#409EFF" },
       position: { x: 400, y: 520 }
     },
     {
       id: "6",
-      type: NodeTypeEnum.END,
+      type: NodeTypeEnum.END_NODE,
       data: { label: "结束", color: "#F56C6C" },
       position: { x: 250, y: 680 }
     }

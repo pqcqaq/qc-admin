@@ -5,17 +5,17 @@ import { NodeTypeEnum, type NodeTemplate } from "./types";
  */
 export const nodeTemplates: NodeTemplate[] = [
   {
-    type: NodeTypeEnum.START,
-    label: "开始",
+    type: NodeTypeEnum.USER_INPUT,
+    label: "用户输入",
     icon: "▶",
-    description: "流程开始节点",
+    description: "用户输入节点",
     defaultData: {
-      label: "开始",
+      label: "用户输入",
       color: "#67C23A"
     }
   },
   {
-    type: NodeTypeEnum.END,
+    type: NodeTypeEnum.END_NODE,
     label: "结束",
     icon: "■",
     description: "流程结束节点",
@@ -25,36 +25,47 @@ export const nodeTemplates: NodeTemplate[] = [
     }
   },
   {
-    type: NodeTypeEnum.PROCESS,
-    label: "流程",
+    type: NodeTypeEnum.TODO_TASK_GENERATOR,
+    label: "待办任务生成",
     icon: "▭",
-    description: "普通流程节点",
+    description: "待办任务生成器节点",
     defaultData: {
-      label: "流程节点",
+      label: "待办任务生成",
       description: "",
       color: "#409EFF"
     }
   },
   {
-    type: NodeTypeEnum.DECISION,
-    label: "判断",
+    type: NodeTypeEnum.CONDITION_CHECKER,
+    label: "条件检查",
     icon: "◆",
-    description: "条件判断节点",
+    description: "条件检查节点",
     defaultData: {
-      label: "条件判断",
+      label: "条件检查",
       description: "",
-      color: "#E6A23C"
+      color: "#E6A23C",
+      config: {},
+      branches: [
+        { name: "true", condition: "result === true" },
+        { name: "false", condition: "result === false" }
+      ]
     }
   },
   {
-    type: NodeTypeEnum.PARALLEL,
-    label: "并行",
+    type: NodeTypeEnum.PARALLEL_EXECUTOR,
+    label: "并行执行",
     icon: "⫴",
-    description: "并行处理节点",
+    description: "并行执行节点",
     defaultData: {
-      label: "并行处理",
+      label: "并行执行",
       description: "",
-      color: "#909399"
+      color: "#909399",
+      config: {},
+      parallelConfig: {
+        mode: "all",
+        timeout: 30000
+      },
+      parallelChildren: [{ name: "任务1" }, { name: "任务2" }]
     }
   },
   {
