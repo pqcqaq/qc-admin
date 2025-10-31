@@ -231,13 +231,16 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
       debugLog("应用加载", `✅ 加载了 ${edges.length} 条边`);
 
       // 4. 清空并重新加载画布
-      workflow.clearCanvas();
+      workflow.clearCanvas(true);
 
       // 5. 导入数据到画布
-      workflow.importData({
-        nodes,
-        edges
-      });
+      workflow.importData(
+        {
+          nodes,
+          edges
+        },
+        true
+      );
 
       // 6. 创建 snapshot，用于后续 diff
       snapshot.value.nodes = new Map(
@@ -253,7 +256,6 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
 
       debugLog("应用加载", "✅ 数据导入完成");
       debugLog("应用加载", "✅ 应用加载完成");
-      ElMessage.success("应用加载成功");
     } catch (error: any) {
       debugLog("应用加载", "❌ 加载过程出错", error);
       ElMessage.error(error.message || "加载应用失败");
@@ -270,7 +272,6 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
       saving.value = true;
       const result = await createWorkflowApplication(data);
       if (result.success) {
-        ElMessage.success("应用创建成功");
         await loadApplications();
         return result.data;
       } else {
@@ -296,7 +297,6 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
       saving.value = true;
       const result = await updateWorkflowApplication(applicationId, data);
       if (result.success) {
-        ElMessage.success("应用信息更新成功");
         if (currentApplication.value?.id === applicationId) {
           currentApplication.value = result.data;
         }
@@ -553,7 +553,6 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
       debugLog("工作流保存", `✅ 边保存完成`);
 
       debugLog("工作流保存", "✅ 保存成功");
-      ElMessage.success("工作流保存成功，请重新打开应用查看");
 
       // 清空画布，让用户重新打开应用
       // 这样可以避免 Vue Flow 内部状态混乱导致的渲染问题
@@ -588,7 +587,6 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
       saving.value = true;
       const result = await deleteWorkflowApplication(applicationId);
       if (result.success) {
-        ElMessage.success("应用删除成功");
         if (currentApplication.value?.id === applicationId) {
           currentApplication.value = null;
           workflow.clearCanvas();
@@ -617,7 +615,6 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
       saving.value = true;
       const result = await cloneWorkflowApplication(applicationId);
       if (result.success) {
-        ElMessage.success("应用克隆成功");
         await loadApplications();
         return result.data;
       } else {

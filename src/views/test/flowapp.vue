@@ -16,7 +16,7 @@
       </div>
 
       <!-- 应用列表 -->
-      <div class="application-list">
+      <div class="application-list dark:bg-dark">
         <el-table
           v-loading="loading"
           :data="applications"
@@ -77,17 +77,16 @@
       </div>
     </div>
 
-    <!-- 图形化编辑视图 -->
-    <div
-      v-else
-      class="flow-editor-view"
-      @contextmenu="onContextMenu"
-      @mousedown="onCanvasMouseDown"
-      @mousemove="onCanvasMouseMove"
-      @mouseup="onCanvasMouseUp"
-    >
+    <template v-else>
       <!-- 顶部工具栏 -->
-      <div class="editor-toolbar">
+      <div
+        class="editor-toolbar"
+        :style="{
+          borderBottom: darkMode ? '1px solid #3a3a3a' : '1px solid #dcdfe6',
+          background: darkMode ? '#1e1e1e' : '#f9fafb',
+          color: darkMode ? '#e5e7eb' : '#303133'
+        }"
+      >
         <div class="toolbar-left">
           <el-button @click="handleBackToList">
             <el-icon><ArrowLeft /></el-icon>
@@ -116,100 +115,111 @@
           </el-button>
         </div>
       </div>
-
-      <!-- Vue Flow 画布 -->
-      <VueFlow
-        id="workflow-canvas"
-        ref="vueFlowRef"
-        :nodes="nodes"
-        :edges="edges"
-        :default-viewport="{ zoom: 1 }"
-        :min-zoom="0.2"
-        :max-zoom="4"
-        :node-types="nodeTypes"
-        :class="{ dark: darkMode }"
-        class="basic-flow"
-        :default-edge-options="defaultEdgeOptions"
-        :connect-on-click="true"
-        @node-click="onNodeClick"
-        @edge-click="onEdgeClick"
-        @node-context-menu="onNodeContextMenu"
-        @edge-context-menu="onEdgeContextMenu"
-        @pane-context-menu="onPaneContextMenu"
-        @drop="onDrop"
-        @dragover="onDragOver"
-        @connect="onConnect"
+      <!-- 图形化编辑视图 -->
+      <div
+        class="flow-editor-view"
+        @contextmenu="onContextMenu"
+        @mousedown="onCanvasMouseDown"
+        @mousemove="onCanvasMouseMove"
+        @mouseup="onCanvasMouseUp"
       >
-        <Background pattern-color="#aaa" :gap="16" />
-        <MiniMap pannable zoomable position="bottom-left" />
-      </VueFlow>
+        <!-- Vue Flow 画布 -->
+        <VueFlow
+          id="workflow-canvas"
+          ref="vueFlowRef"
+          :nodes="nodes"
+          :edges="edges"
+          :default-viewport="{ zoom: 1 }"
+          :min-zoom="0.2"
+          :max-zoom="4"
+          :node-types="nodeTypes"
+          :class="{ dark: darkMode }"
+          class="basic-flow"
+          :default-edge-options="defaultEdgeOptions"
+          :connect-on-click="true"
+          @node-click="onNodeClick"
+          @edge-click="onEdgeClick"
+          @node-context-menu="onNodeContextMenu"
+          @edge-context-menu="onEdgeContextMenu"
+          @pane-context-menu="onPaneContextMenu"
+          @drop="onDrop"
+          @dragover="onDragOver"
+          @connect="onConnect"
+        >
+          <Background pattern-color="#aaa" :gap="16" />
+          <MiniMap pannable zoomable position="bottom-left" />
+        </VueFlow>
 
-      <!-- 顶部控制按钮 -->
-      <Controls class="controls" position="top-left">
-        <ControlButton title="重置视图" @click="resetTransform">
-          <Refresh />
-        </ControlButton>
+        <!-- 顶部控制按钮 -->
+        <Controls class="controls" position="top-left">
+          <ControlButton title="重置视图" @click="resetTransform">
+            <Refresh />
+          </ControlButton>
 
-        <ControlButton title="适应画布" @click="fitView">
-          <FullScreen />
-        </ControlButton>
+          <ControlButton title="适应画布" @click="fitView">
+            <FullScreen />
+          </ControlButton>
 
-        <ControlButton title="切换暗黑模式" @click="changeDarkMode">
-          <Moon v-if="!darkMode" />
-          <Sunny v-else />
-        </ControlButton>
+          <ControlButton title="切换暗黑模式" @click="changeDarkMode">
+            <Moon v-if="!darkMode" />
+            <Sunny v-else />
+          </ControlButton>
 
-        <ControlButton title="导出数据" @click="logToObject">
-          <More />
-        </ControlButton>
+          <ControlButton title="导出数据" @click="logToObject">
+            <More />
+          </ControlButton>
 
-        <ControlButton title="清空画布" @click="clearCanvas">
-          <Delete />
-        </ControlButton>
-      </Controls>
+          <ControlButton title="清空画布" @click="clearCanvas">
+            <Delete />
+          </ControlButton>
+        </Controls>
 
-      <!-- 底部节点面板 -->
-      <NodePalette
-        :dark-mode="darkMode"
-        :dragging-node-id="draggingNodeId"
-        @drag-start="onPaletteDragStart"
-        @delete-node="handleDeleteNode"
-      />
+        <!-- 底部节点面板 -->
+        <NodePalette
+          v-model="openNodePalette"
+          :dark-mode="darkMode"
+          :dragging-node-id="draggingNodeId"
+          :go-left="!openSidePanel"
+          @drag-start="onPaletteDragStart"
+          @delete-node="handleDeleteNode"
+        />
 
-      <!-- 右侧属性面板 -->
-      <PropertiesPanel
-        :dark-mode="darkMode"
-        :selected-node="selectedNode"
-        @update-node="handleUpdateNode"
-        @delete-node="handleDeleteNode"
-      />
+        <!-- 右侧属性面板 -->
+        <PropertiesPanel
+          v-model="openSidePanel"
+          :dark-mode="darkMode"
+          :selected-node="selectedNode"
+          @update-node="handleUpdateNode"
+          @delete-node="handleDeleteNode"
+        />
 
-      <!-- 右键菜单 -->
-      <ContextMenu
-        :dark-mode="darkMode"
-        :visible="contextMenu.visible"
-        :x="contextMenu.x"
-        :y="contextMenu.y"
-        :menu-type="contextMenu.type"
-        :target-node="contextMenu.targetNode"
-        :target-edge="contextMenu.targetEdge"
-        @close="closeContextMenu"
-        @zoom-in="handleZoomIn"
-        @zoom-out="handleZoomOut"
-        @fit-view="fitView"
-        @reset-view="resetTransform"
-        @select-all="handleSelectAll"
-        @clear-canvas="clearCanvas"
-        @edit-node="handleEditNodeFromMenu"
-        @copy-node="handleCopyNode"
-        @duplicate-node="handleDuplicateNode"
-        @delete-node="handleDeleteNodeFromMenu"
-        @toggle-connectable="handleToggleConnectable"
-        @edit-edge="handleEditEdge"
-        @delete-edge="handleDeleteEdgeFromMenu"
-        @toggle-animation="handleToggleAnimation"
-      />
-    </div>
+        <!-- 右键菜单 -->
+        <ContextMenu
+          :dark-mode="darkMode"
+          :visible="contextMenu.visible"
+          :x="contextMenu.x"
+          :y="contextMenu.y"
+          :menu-type="contextMenu.type"
+          :target-node="contextMenu.targetNode"
+          :target-edge="contextMenu.targetEdge"
+          @close="closeContextMenu"
+          @zoom-in="handleZoomIn"
+          @zoom-out="handleZoomOut"
+          @fit-view="fitView"
+          @reset-view="resetTransform"
+          @select-all="handleSelectAll"
+          @clear-canvas="clearCanvas"
+          @edit-node="handleEditNodeFromMenu"
+          @copy-node="handleCopyNode"
+          @duplicate-node="handleDuplicateNode"
+          @delete-node="handleDeleteNodeFromMenu"
+          @toggle-connectable="handleToggleConnectable"
+          @edit-edge="handleEditEdge"
+          @delete-edge="handleDeleteEdgeFromMenu"
+          @toggle-animation="handleToggleAnimation"
+        />
+      </div>
+    </template>
 
     <!-- 创建/编辑应用对话框 -->
     <el-dialog
@@ -248,7 +258,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, shallowRef, computed, watch } from "vue";
+import { ref, onMounted, shallowRef, computed, watch, watchEffect } from "vue";
 import {
   VueFlow,
   MarkerType,
@@ -276,7 +286,7 @@ import { ElMessage, ElMessageBox, type FormInstance } from "element-plus";
 
 // 导入组件
 import NodePalette from "./components/NodePalette.vue";
-import PropertiesPanel from "./components/PropertiesPanel.vue";
+import PropertiesPanel from "./components/PropertiesPanel/index.vue";
 import ContextMenu from "./components/ContextMenu.vue";
 
 // 导入类型和配置
@@ -321,6 +331,8 @@ const isDraggingFromPalette = ref(false);
 const draggingNodeId = ref<string | null>(null);
 const mouseDownPos = ref<{ x: number; y: number } | null>(null);
 const isDragging = ref(false);
+const openSidePanel = ref(false);
+const openNodePalette = ref(false);
 
 // 分页状态
 const pagination = ref({
@@ -445,6 +457,10 @@ function handleBackToList() {
       })
       .catch(action => {
         if (action === "cancel") {
+          currentApplication.value = null;
+          // 清空画布，让用户重新打开应用
+          // 这样可以避免 Vue Flow 内部状态混乱导致的渲染问题
+          workflow.clearCanvas();
           currentApplication.value = null;
         }
       });
@@ -971,7 +987,6 @@ async function handleToggleAnimation(edge: Edge) {
   flex-direction: column;
   width: calc(100% - 35px);
   height: calc(100% - 35px);
-  background-color: #f5f7fa;
 }
 
 // 应用列表视图
@@ -1015,6 +1030,37 @@ async function handleToggleAnimation(edge: Edge) {
   }
 }
 
+.editor-toolbar {
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 5%);
+
+  .toolbar-left {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+
+    .app-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #303133;
+    }
+  }
+}
+
+// .editor-toolbar {
+//   z-index: 10;
+//   display: flex;
+//   align-items: center;
+//   justify-content: space-between;
+//   padding: 12px 20px;
+//   background: white;
+//   border-bottom: 1px solid #e4e7ed;
+//   box-shadow: 0 2px 4px rgb(0 0 0 / 5%);
+
 // 图形化编辑视图
 .flow-editor-view {
   position: relative;
@@ -1023,29 +1069,6 @@ async function handleToggleAnimation(edge: Edge) {
   width: 100%;
   height: 100%;
   overflow: hidden;
-
-  .editor-toolbar {
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 20px;
-    background: white;
-    border-bottom: 1px solid #e4e7ed;
-    box-shadow: 0 2px 4px rgb(0 0 0 / 5%);
-
-    .toolbar-left {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-
-      .app-name {
-        font-size: 16px;
-        font-weight: 600;
-        color: #303133;
-      }
-    }
-  }
 }
 
 .basic-flow {

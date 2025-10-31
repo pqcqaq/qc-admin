@@ -110,14 +110,10 @@ const getParallelHandleStyle = (index: number) => {
 
   &:hover {
     box-shadow: 0 6px 20px rgb(168 237 234 / 50%);
-    transform: translateY(-2px) scale(1.02);
+    transform: translateY(-2px);
 
     &::before {
       opacity: 1;
-    }
-
-    .parallel-icon {
-      transform: scale(1.1);
     }
   }
 }
@@ -216,7 +212,6 @@ const getParallelHandleStyle = (index: number) => {
 
     &:hover {
       box-shadow: 0 3px 12px rgb(103 194 58 / 70%);
-      transform: scale(1.3);
     }
   }
 
@@ -226,7 +221,6 @@ const getParallelHandleStyle = (index: number) => {
 
     &:hover {
       box-shadow: 0 3px 12px rgb(79 172 254 / 70%);
-      transform: scale(1.3);
     }
   }
 
@@ -236,13 +230,13 @@ const getParallelHandleStyle = (index: number) => {
 
     &:hover {
       box-shadow: 0 3px 12px rgb(255 167 81 / 70%);
-      transform: scale(1.3);
     }
   }
 }
 
 .handle-label {
   position: absolute;
+  z-index: 999;
   padding: 4px 8px;
   font-size: 11px;
   font-weight: 600;

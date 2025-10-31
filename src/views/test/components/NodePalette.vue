@@ -3,6 +3,7 @@
     ref="paletteRef"
     class="node-palette"
     :class="{ collapsed: isCollapsed, dark: darkMode }"
+    :style="{ left: goLeft ? '45%' : '50%' }"
     @dragover.prevent
     @drop="onDropToDelete"
   >
@@ -59,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted, watch } from "vue";
+import { ref, onUnmounted, watch, computed } from "vue";
 import { ArrowUp, Delete } from "@element-plus/icons-vue";
 import { nodeTemplates } from "./nodeConfig";
 import type { NodeTemplate } from "./types";
@@ -68,6 +69,8 @@ import type { NodeTemplate } from "./types";
 interface Props {
   darkMode?: boolean;
   draggingNodeId?: string | null;
+  goLeft: boolean;
+  modelValue: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -78,9 +81,14 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   dragStart: [template: NodeTemplate];
   deleteNode: [nodeId: string];
+  "update:modelValue": [modelValue: boolean];
 }>();
 
-const isCollapsed = ref(false);
+const isCollapsed = computed({
+  get: () => props.modelValue,
+  set: value => emit("update:modelValue", value)
+});
+
 const isDraggingOver = ref(false);
 const paletteRef = ref<HTMLElement | null>(null);
 
@@ -189,12 +197,11 @@ defineExpose({
 .node-palette {
   position: absolute;
   bottom: 0;
-  left: 50%;
   z-index: 100;
   display: flex;
   flex-direction: column;
-  width: 700px;
-  max-width: calc(100% - 400px);
+  width: 900px;
+  max-width: calc(100% - 100px);
   max-height: 240px;
   background: white;
   border-radius: 8px 8px 0 0;

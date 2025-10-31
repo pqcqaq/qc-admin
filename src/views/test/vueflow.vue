@@ -58,14 +58,17 @@
 
     <!-- 底部节点面板 -->
     <NodePalette
+      v-model="openNodePalette"
       :dark-mode="darkMode"
       :dragging-node-id="draggingNodeId"
+      :go-left="!openSidePanel"
       @drag-start="onPaletteDragStart"
       @delete-node="handleDeleteNode"
     />
 
     <!-- 右侧属性面板 -->
     <PropertiesPanel
+      v-model="openSidePanel"
       :dark-mode="darkMode"
       :selected-node="selectedNode"
       @update-node="handleUpdateNode"
@@ -124,7 +127,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 
 // 导入组件
 import NodePalette from "./components/NodePalette.vue";
-import PropertiesPanel from "./components/PropertiesPanel.vue";
+import PropertiesPanel from "./components/PropertiesPanel/index.vue";
 import ContextMenu from "./components/ContextMenu.vue";
 
 // 导入类型和配置
@@ -212,6 +215,8 @@ const selectedNode = computed(() => {
 });
 
 // 状态管理
+const openSidePanel = ref(false);
+const openNodePalette = ref(false);
 const darkMode = ref(false);
 const isDraggingFromPalette = ref(false);
 const draggingNodeId = ref<string | null>(null);
