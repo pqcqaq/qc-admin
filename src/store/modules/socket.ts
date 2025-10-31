@@ -163,8 +163,8 @@ export const useSocketStore = defineStore("socket", () => {
     hookOnMounted: <T>(
       topic: string,
       handler: MessageHandler<T>,
-      errHandler: (err: any) => void,
-      init: MessageHandler<any[]>
+      errHandler?: (err: any) => void,
+      init?: MessageHandler<any[]>
     ) => void;
     sendMessage: SocketClient["sendMessage"];
     createChannel: SocketClient["createChannel"];
