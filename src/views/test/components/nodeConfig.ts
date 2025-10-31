@@ -58,14 +58,62 @@ export const nodeTemplates: NodeTemplate[] = [
     }
   },
   {
-    type: NodeTypeEnum.CUSTOM,
-    label: "自定义",
-    icon: "⬡",
-    description: "自定义节点",
+    type: NodeTypeEnum.API_CALLER,
+    label: "API调用",
+    icon: "🌐",
+    description: "API调用节点",
     defaultData: {
-      label: "自定义节点",
+      label: "API调用",
       description: "",
-      color: "#606266"
+      color: "#667eea",
+      apiConfig: {
+        url: "",
+        method: "GET"
+      }
+    }
+  },
+  {
+    type: NodeTypeEnum.DATA_PROCESSOR,
+    label: "数据处理",
+    icon: "⚙️",
+    description: "数据处理节点",
+    defaultData: {
+      label: "数据处理",
+      description: "",
+      color: "#f093fb",
+      processorLanguage: "javascript",
+      processorCode: ""
+    }
+  },
+  {
+    type: NodeTypeEnum.WHILE_LOOP,
+    label: "循环",
+    icon: "🔄",
+    description: "循环节点",
+    defaultData: {
+      label: "循环",
+      description: "",
+      color: "#fa709a",
+      config: {
+        condition: "",
+        maxIterations: 100
+      }
+    }
+  },
+  {
+    type: NodeTypeEnum.LLM_CALLER,
+    label: "LLM调用",
+    icon: "🤖",
+    description: "LLM调用节点",
+    defaultData: {
+      label: "LLM调用",
+      description: "",
+      color: "#a8edea",
+      prompt: "",
+      config: {
+        model: "gpt-3.5-turbo",
+        temperature: 0.7
+      }
     }
   }
 ];

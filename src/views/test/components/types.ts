@@ -1,14 +1,31 @@
 /**
- * 节点类型定义
+ * 节点类型定义（前端）
  */
 export enum NodeTypeEnum {
-  START = "start",
-  END = "end",
-  PROCESS = "process",
-  DECISION = "decision",
-  PARALLEL = "parallel",
-  CUSTOM = "custom"
+  START = "start", // 用户输入节点
+  END = "end", // 结束节点
+  PROCESS = "process", // 待办任务生成器
+  DECISION = "decision", // 条件检查节点（分支）
+  PARALLEL = "parallel", // 并行执行节点
+  API_CALLER = "api_caller", // API调用节点
+  DATA_PROCESSOR = "data_processor", // 数据处理节点
+  WHILE_LOOP = "while_loop", // 循环节点
+  LLM_CALLER = "llm_caller" // LLM调用节点
 }
+
+/**
+ * 后端节点类型
+ */
+export type BackendNodeType =
+  | "user_input"
+  | "end_node"
+  | "todo_task_generator"
+  | "condition_checker"
+  | "parallel_executor"
+  | "api_caller"
+  | "data_processor"
+  | "while_loop"
+  | "llm_caller";
 
 /**
  * 节点模板配置

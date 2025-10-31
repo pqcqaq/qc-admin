@@ -95,11 +95,20 @@ const handleClick = () => {
 };
 
 const socketStore = useSocketStore();
-socketStore.hookOnMounted<string>("test_topic", msg => {
-  message(`收到消息: ${msg}`, {
-    type: "info"
-  });
-});
+socketStore.hookOnMounted<string>(
+  "test_topic",
+  msg => {
+    message(`收到消息: ${msg}`, {
+      type: "info"
+    });
+  },
+  err => {
+    console.error("Socket error:", err);
+  },
+  () => {
+    console.log("Socket initialized");
+  }
+);
 
 const input = ref("");
 const handleSend = () => {

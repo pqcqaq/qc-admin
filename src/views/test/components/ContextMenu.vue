@@ -126,10 +126,10 @@ import type { Node, Edge } from "@vue-flow/core";
 // Props
 interface Props {
   darkMode?: boolean;
-  visible: boolean;
-  x: number;
-  y: number;
-  menuType: "canvas" | "node" | "edge";
+  visible?: boolean;
+  x?: number;
+  y?: number;
+  menuType?: "canvas" | "node" | "edge";
   targetNode?: Node | null;
   targetEdge?: Edge | null;
 }
@@ -284,7 +284,11 @@ const handleToggleAnimation = () => {
 
 // 点击外部关闭菜单
 const handleClickOutside = (event: MouseEvent) => {
-  if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
+  if (
+    menuRef.value &&
+    event.target instanceof HTMLElement &&
+    !menuRef.value.contains(event.target)
+  ) {
     emit("close");
   }
 };

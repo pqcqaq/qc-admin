@@ -206,7 +206,10 @@ function getNodeTypeTag(
     [NodeTypeEnum.PROCESS]: "primary",
     [NodeTypeEnum.DECISION]: "warning",
     [NodeTypeEnum.PARALLEL]: "info",
-    [NodeTypeEnum.CUSTOM]: ""
+    [NodeTypeEnum.API_CALLER]: "primary",
+    [NodeTypeEnum.DATA_PROCESSOR]: "warning",
+    [NodeTypeEnum.WHILE_LOOP]: "info",
+    [NodeTypeEnum.LLM_CALLER]: "primary"
   };
   return (tagMap[type] ||
     ("" as "primary" | "success" | "warning" | "info" | "danger")) as any;
@@ -222,7 +225,10 @@ function getNodeTypeLabel(type: string): string {
     [NodeTypeEnum.PROCESS]: "流程节点",
     [NodeTypeEnum.DECISION]: "判断节点",
     [NodeTypeEnum.PARALLEL]: "并行节点",
-    [NodeTypeEnum.CUSTOM]: "自定义节点"
+    [NodeTypeEnum.API_CALLER]: "API调用节点",
+    [NodeTypeEnum.DATA_PROCESSOR]: "数据处理节点",
+    [NodeTypeEnum.WHILE_LOOP]: "循环节点",
+    [NodeTypeEnum.LLM_CALLER]: "LLM调用节点"
   };
   return labelMap[type] || type;
 }

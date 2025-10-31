@@ -14,7 +14,10 @@ import EndNode from "../components/nodes/EndNode.vue";
 import ProcessNode from "../components/nodes/ProcessNode.vue";
 import DecisionNode from "../components/nodes/DecisionNode.vue";
 import ParallelNode from "../components/nodes/ParallelNode.vue";
-import CustomNodeComponent from "../components/nodes/CustomNode.vue";
+import ApiCallerNode from "../components/nodes/ApiCallerNode.vue";
+import DataProcessorNode from "../components/nodes/DataProcessorNode.vue";
+import WhileLoopNode from "../components/nodes/WhileLoopNode.vue";
+import LlmCallerNode from "../components/nodes/LlmCallerNode.vue";
 
 // 导入类型和配置
 import { NodeTypeEnum } from "../components/types";
@@ -229,7 +232,10 @@ export function useWorkflow(options: WorkflowOptions = {}) {
     [NodeTypeEnum.PROCESS]: markRaw(ProcessNode),
     [NodeTypeEnum.DECISION]: markRaw(DecisionNode),
     [NodeTypeEnum.PARALLEL]: markRaw(ParallelNode),
-    [NodeTypeEnum.CUSTOM]: markRaw(CustomNodeComponent)
+    [NodeTypeEnum.API_CALLER]: markRaw(ApiCallerNode),
+    [NodeTypeEnum.DATA_PROCESSOR]: markRaw(DataProcessorNode),
+    [NodeTypeEnum.WHILE_LOOP]: markRaw(WhileLoopNode),
+    [NodeTypeEnum.LLM_CALLER]: markRaw(LlmCallerNode)
   });
 
   // 计算属性：当前选中的节点
