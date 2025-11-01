@@ -38,8 +38,8 @@ import type {
   WorkflowNodeResponse,
   WorkflowEdgeResponse
 } from "qc-admin-api-common/workflow";
-import { useWorkflow } from "./useWorkflow";
-import { NodeTypeEnum } from "../components/types";
+import { useWorkflow } from "../workflow/useWorkflow";
+import { NodeTypeEnum } from "@/components/WorkFlow/types";
 import {
   calculateBranchNodesFromNode,
   calculateWorkflowDiff,

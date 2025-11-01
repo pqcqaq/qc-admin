@@ -1,4 +1,4 @@
-import { NodeTypeEnum } from "../components/types";
+import { NodeTypeEnum } from "@/components/WorkFlow/types";
 import type { Node, Edge } from "@vue-flow/core";
 
 export type Snapshot = {

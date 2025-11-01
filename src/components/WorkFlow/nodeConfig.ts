@@ -1,4 +1,29 @@
+import { markRaw } from "vue";
 import { NodeTypeEnum, type NodeTemplate } from "./types";
+import {
+  DecisionNode,
+  EndNode,
+  ParallelNode,
+  ProcessNode,
+  StartNode,
+  ApiCallerNode,
+  DataProcessorNode,
+  WhileLoopNode,
+  LlmCallerNode
+} from ".";
+
+// 节点类型注册
+export const nodeTypes = {
+  [NodeTypeEnum.USER_INPUT]: markRaw(StartNode),
+  [NodeTypeEnum.END_NODE]: markRaw(EndNode),
+  [NodeTypeEnum.TODO_TASK_GENERATOR]: markRaw(ProcessNode),
+  [NodeTypeEnum.CONDITION_CHECKER]: markRaw(DecisionNode),
+  [NodeTypeEnum.PARALLEL_EXECUTOR]: markRaw(ParallelNode),
+  [NodeTypeEnum.API_CALLER]: markRaw(ApiCallerNode),
+  [NodeTypeEnum.DATA_PROCESSOR]: markRaw(DataProcessorNode),
+  [NodeTypeEnum.WHILE_LOOP]: markRaw(WhileLoopNode),
+  [NodeTypeEnum.LLM_CALLER]: markRaw(LlmCallerNode)
+};
 
 /**
  * 节点模板配置

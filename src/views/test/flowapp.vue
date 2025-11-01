@@ -55,13 +55,13 @@ import { ElMessageBox } from "element-plus";
 import type { WorkflowApplicationResponse } from "qc-admin-api-common/workflow";
 
 // 导入组件
-import ApplicationList from "./components/ApplicationList.vue";
-import ApplicationDialog from "./components/ApplicationDialog.vue";
-import EditorToolbar from "./components/EditorToolbar.vue";
-import WorkflowEditor from "./components/WorkflowEditor.vue";
+import ApplicationList from "@/components/WorkFlow/ApplicationList.vue";
+import ApplicationDialog from "@/components/WorkFlow/ApplicationDialog.vue";
+import EditorToolbar from "@/components/WorkFlow/EditorToolbar.vue";
+import WorkflowEditor from "@/components/WorkFlow/WorkflowEditor.vue";
 
 // 导入 composable
-import { useWorkflowApplication } from "./composables/useWorkflowApplication";
+import { useWorkflowApplication } from "@/composables/workflowApplication/useWorkflowApplication";
 
 // 使用 workflow application composable
 const workflowApp = useWorkflowApplication();

@@ -3,25 +3,14 @@
  * 提供所有节点和连线的增删改查操作
  */
 
-import { ref, computed, markRaw } from "vue";
+import { ref, computed } from "vue";
 import { useVueFlow } from "@vue-flow/core";
 import type { Node, Edge, Connection } from "@vue-flow/core";
 import { ElMessage } from "element-plus";
 
-// 导入节点组件
-import StartNode from "../components/nodes/StartNode.vue";
-import EndNode from "../components/nodes/EndNode.vue";
-import ProcessNode from "../components/nodes/ProcessNode.vue";
-import DecisionNode from "../components/nodes/DecisionNode.vue";
-import ParallelNode from "../components/nodes/ParallelNode.vue";
-import ApiCallerNode from "../components/nodes/ApiCallerNode.vue";
-import DataProcessorNode from "../components/nodes/DataProcessorNode.vue";
-import WhileLoopNode from "../components/nodes/WhileLoopNode.vue";
-import LlmCallerNode from "../components/nodes/LlmCallerNode.vue";
-
 // 导入类型和配置
-import { NodeTypeEnum } from "../components/types";
-import { createNode } from "../components/nodeConfig";
+import type { NodeTypeEnum } from "@/components/WorkFlow/types";
+import { createNode, nodeTypes } from "@/components/WorkFlow/nodeConfig";
 
 /**
  * 操作结果类型
@@ -270,19 +259,6 @@ export function useWorkflow(options: WorkflowOptions = {}) {
     }));
     setEdges(updatedEdges);
   };
-
-  // 节点类型注册
-  const nodeTypes = ref({
-    [NodeTypeEnum.USER_INPUT]: markRaw(StartNode),
-    [NodeTypeEnum.END_NODE]: markRaw(EndNode),
-    [NodeTypeEnum.TODO_TASK_GENERATOR]: markRaw(ProcessNode),
-    [NodeTypeEnum.CONDITION_CHECKER]: markRaw(DecisionNode),
-    [NodeTypeEnum.PARALLEL_EXECUTOR]: markRaw(ParallelNode),
-    [NodeTypeEnum.API_CALLER]: markRaw(ApiCallerNode),
-    [NodeTypeEnum.DATA_PROCESSOR]: markRaw(DataProcessorNode),
-    [NodeTypeEnum.WHILE_LOOP]: markRaw(WhileLoopNode),
-    [NodeTypeEnum.LLM_CALLER]: markRaw(LlmCallerNode)
-  });
 
   // 计算属性：当前选中的节点
   const selectedNode = computed(() => {

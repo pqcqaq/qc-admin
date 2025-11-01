@@ -138,8 +138,8 @@ import PropertiesPanel from "./components/PropertiesPanel/index.vue";
 import ContextMenu from "./components/ContextMenu.vue";
 
 // 导入类型和配置
-import { NodeTypeEnum, type NodeTemplate } from "./components/types";
-import { useWorkflow } from "./composables/useWorkflow";
+import { NodeTypeEnum, type NodeTemplate } from "@/components/WorkFlow/types";
+import { useWorkflow } from "@/composables/workflow/useWorkflow";
 
 // Vue Flow 实例
 const vueFlowRef = ref();

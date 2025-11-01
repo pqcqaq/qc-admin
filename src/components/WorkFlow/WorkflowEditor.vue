@@ -133,12 +133,12 @@ import { ElMessage, ElMessageBox } from "element-plus";
 // 导入组件
 import NodePalette from "./NodePalette.vue";
 import PropertiesPanel from "./PropertiesPanel/index.vue";
-import ContextMenu from "./ContextMenu.vue";
+import ContextMenu from "./ContextMenu/ContextMenu.vue";
+import { useWorkflow } from "@/composables/workflow/useWorkflow";
 
 // 导入类型和配置
 import type { NodeTemplate } from "./types";
 import { getNodeConnectionRule, NodeTypeEnum } from "./types";
-import type { useWorkflow } from "../composables/useWorkflow";
 
 // Props
 interface Props {
