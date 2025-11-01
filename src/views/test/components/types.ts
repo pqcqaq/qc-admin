@@ -29,29 +29,48 @@ export type NodeType =
 
 /**
  * 分支配置（用于判断节点）
+ * 注意：这个配置保存到数据库的 branch_nodes 字段（Record<string, BranchConfig>）
+ * targetNodeId 在 UI 的 computed 中从 edges 动态读取
  */
 export interface BranchConfig {
   name: string; // 分支名称，如 "true", "false", "case1"
-  targetNodeId?: string; // 目标节点ID
   condition?: string; // 分支条件表达式（可选）
+  handlerId?: string; // 处理器节点 ID（可选，用于指定特定的处理逻辑）
+  targetNodeId?: string; // 目标节点ID（从 edge 中读取，用于 UI 显示）
+}
+
+/**
+ * 并行任务线程配置
+ * 这个配置会保存到数据库的 parallel_config.threads 字段
+ */
+export interface ParallelThreadConfig {
+  id: string; // 任务唯一标识符（用于关联 edge 的 sourceHandle）
+  name: string; // 任务名称
+  handlerId?: string; // 处理器节点 ID（可选，用于指定特定的处理逻辑）
+  [key: string]: any;
 }
 
 /**
  * 并行配置（用于并行节点）
+ * 注意：这个配置会保存到数据库的 parallel_config 字段
  */
 export interface ParallelConfig {
   mode?: "all" | "any" | "race"; // 并行模式：全部完成、任意完成、竞速
   timeout?: number; // 超时时间
+  threads?: ParallelThreadConfig[]; // 并行任务列表（保存任务信息）
   [key: string]: any;
 }
 
 /**
  * 并行子节点配置（用于并行节点）
+ * 注意：这个配置只用于 UI 显示（渲染 handle），从 parallelConfig.threads 和 edges 计算得出
+ * 不直接保存到数据库
  */
 export interface ParallelChildConfig {
-  id?: string; // 子节点ID
-  name: string; // 子节点名称
-  targetNodeId?: string; // 目标节点ID
+  id: string; // 任务 ID（对应 ParallelThreadConfig.id）
+  name: string; // 任务名称（从 ParallelThreadConfig.name 读取）
+  handlerId?: string; // 处理器节点 ID（从 ParallelThreadConfig.handlerId 读取）
+  targetNodeId?: string; // 目标节点ID（从 edge 中读取，用于显示）
 }
 
 /**
@@ -66,9 +85,9 @@ export interface NodeData {
   processorLanguage?: string; // 处理器语言
   processorCode?: string; // 代码处理器
   apiConfig?: Record<string, any>; // API配置
-  parallelConfig?: ParallelConfig; // 并行配置
-  branches?: BranchConfig[]; // 分支配置（判断节点）
-  parallelChildren?: ParallelChildConfig[]; // 并行子节点配置（并行节点）
+  parallelConfig?: ParallelConfig; // 并行配置（会保存到数据库）
+  branchNodes?: Record<string, BranchConfig>; // 分支配置（判断节点，会保存到数据库）
+  parallelChildren?: ParallelChildConfig[]; // 并行子节点配置（并行节点，仅用于 UI，不保存到数据库）
   async?: boolean; // 是否异步执行
   timeout?: number; // 超时时间
   retryCount?: number; // 重试次数
@@ -123,14 +142,21 @@ export function getNodeConnectionRule(
       requiresBranchName: false,
       maxOutputConnections: 1
     },
-    process: {
+    user_input: {
       canHaveNextNode: true,
       canHaveBranches: false,
       canBeParallel: true,
       requiresBranchName: false,
       maxOutputConnections: 1
     },
-    decision: {
+    todo_task_generator: {
+      canHaveNextNode: true,
+      canHaveBranches: false,
+      canBeParallel: true,
+      requiresBranchName: false,
+      maxOutputConnections: 1
+    },
+    condition_checker: {
       canHaveNextNode: false,
       canHaveBranches: true,
       canBeParallel: true,
@@ -158,6 +184,42 @@ export function getNodeConnectionRule(
       requiresBranchName: false,
       maxOutputConnections: 1
     },
+    end_node: {
+      canHaveNextNode: false,
+      canHaveBranches: false,
+      canBeParallel: true,
+      requiresBranchName: false,
+      maxOutputConnections: 0
+    },
+    parallel_executor: {
+      canHaveNextNode: true,
+      canHaveBranches: false,
+      canBeParallel: false,
+      requiresBranchName: false,
+      maxOutputConnections: 1
+    },
+    llm_caller: {
+      canHaveNextNode: true,
+      canHaveBranches: false,
+      canBeParallel: true,
+      requiresBranchName: false,
+      maxOutputConnections: 1
+    },
+    // 兼容旧的节点类型名称
+    process: {
+      canHaveNextNode: true,
+      canHaveBranches: false,
+      canBeParallel: true,
+      requiresBranchName: false,
+      maxOutputConnections: 1
+    },
+    decision: {
+      canHaveNextNode: false,
+      canHaveBranches: true,
+      canBeParallel: true,
+      requiresBranchName: true,
+      maxOutputConnections: -1
+    },
     end: {
       canHaveNextNode: false,
       canHaveBranches: false,
@@ -169,13 +231,6 @@ export function getNodeConnectionRule(
       canHaveNextNode: true,
       canHaveBranches: false,
       canBeParallel: false,
-      requiresBranchName: false,
-      maxOutputConnections: 1
-    },
-    llm_caller: {
-      canHaveNextNode: true,
-      canHaveBranches: false,
-      canBeParallel: true,
       requiresBranchName: false,
       maxOutputConnections: 1
     }

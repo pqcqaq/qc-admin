@@ -14,7 +14,11 @@
     <transition name="slide-left">
       <div v-show="!isCollapsed" class="panel-content">
         <div class="panel-header">
-          <h3 class="panel-title">属性配置</h3>
+          <h3 class="panel-title">
+            {{
+              selectedNode ? "节点配置" : selectedEdge ? "连线配置" : "属性配置"
+            }}
+          </h3>
           <el-button
             v-if="selectedNode"
             type="danger"
@@ -23,19 +27,37 @@
             circle
             @click="handleDeleteNode"
           />
+          <el-button
+            v-if="selectedEdge"
+            type="danger"
+            size="small"
+            :icon="Delete"
+            circle
+            @click="handleDeleteEdge"
+          />
         </div>
 
-        <!-- 未选中节点时的提示 -->
-        <div v-if="!selectedNode" class="empty-state">
+        <!-- 未选中节点或边时的提示 -->
+        <div v-if="!selectedNode && !selectedEdge" class="empty-state">
           <el-icon class="empty-icon">
             <InfoFilled />
           </el-icon>
-          <p class="empty-text">请选择一个节点</p>
-          <p class="empty-hint">点击画布中的节点以编辑其属性</p>
+          <p class="empty-text">请选择一个节点或连线</p>
+          <p class="empty-hint">点击画布中的节点或连线以编辑其属性</p>
+        </div>
+
+        <!-- 边属性表单 -->
+        <div v-else-if="selectedEdge" class="properties-form">
+          <el-collapse v-model="activeCollapse" class="compact-collapse">
+            <EdgeConfigSection
+              :edge="selectedEdge"
+              @update-edge="handleUpdateEdge"
+            />
+          </el-collapse>
         </div>
 
         <!-- 节点属性表单 -->
-        <div v-else class="properties-form">
+        <div v-else-if="selectedNode" class="properties-form">
           <el-collapse v-model="activeCollapse" class="compact-collapse">
             <!-- 基础信息 -->
             <BasicInfoSection
@@ -73,6 +95,27 @@
               @update-timeout="handleUpdateParallelTimeout"
             />
 
+            <!-- LLM 节点专用：LLM 配置 -->
+            <LlmConfigSection
+              v-if="selectedNode.type === NodeTypeEnum.LLM_CALLER"
+              :node="selectedNode"
+              @update-data="handleUpdateNodeData"
+            />
+
+            <!-- API 调用节点专用：API 配置 -->
+            <ApiConfigSection
+              v-if="selectedNode.type === NodeTypeEnum.API_CALLER"
+              :node="selectedNode"
+              @update-data="handleUpdateNodeData"
+            />
+
+            <!-- 数据处理器节点专用：处理器配置 -->
+            <ProcessorConfigSection
+              v-if="selectedNode.type === NodeTypeEnum.DATA_PROCESSOR"
+              :node="selectedNode"
+              @update-data="handleUpdateNodeData"
+            />
+
             <!-- 连接设置 -->
             <ConnectionSection
               :node="selectedNode"
@@ -87,7 +130,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import type { Node } from "@vue-flow/core";
+import type { Node, Edge } from "@vue-flow/core";
 import { ArrowRight, Delete, InfoFilled } from "@element-plus/icons-vue";
 import {
   BasicInfoSection,
@@ -96,6 +139,10 @@ import {
   ConditionSection,
   ParallelSection
 } from "./sections";
+import LlmConfigSection from "./sections/LlmConfigSection.vue";
+import ApiConfigSection from "./sections/ApiConfigSection.vue";
+import ProcessorConfigSection from "./sections/ProcessorConfigSection.vue";
+import EdgeConfigSection from "./sections/EdgeConfigSection.vue";
 import { NodeTypeEnum } from "./types";
 import { useNodeOperations } from "./composables/useNodeOperations";
 import { type BranchConfig, type ParallelChildConfig } from "./types";
@@ -104,6 +151,7 @@ import { DEFAULT_PARALLEL_CONFIG } from "./constants";
 interface Props {
   darkMode?: boolean;
   selectedNode: Node | null;
+  selectedEdge?: Edge | null;
   modelValue: boolean;
 }
 
@@ -115,6 +163,8 @@ const emit = defineEmits<{
   "update:modelValue": [value: boolean];
   updateNode: [nodeId: string, updates: Partial<Node>];
   deleteNode: [nodeId: string];
+  updateEdge: [edgeId: string, updates: Partial<Edge>];
+  deleteEdge: [edgeId: string];
 }>();
 
 // 状态管理
@@ -122,9 +172,18 @@ const isCollapsed = computed({
   get: () => props.modelValue,
   set: val => emit("update:modelValue", val)
 });
-const activeCollapse = ref<string>("basic");
+const activeCollapse = ref<string[]>([
+  "basic",
+  "llm-config",
+  "api-config",
+  "processor-config",
+  "edge-config"
+]);
 
 // 使用节点操作 Composable
+// 将 selectedNode 转换为响应式引用
+const selectedNodeRef = computed(() => props.selectedNode);
+
 const {
   updateNodeData,
   updateNodePosition,
@@ -133,7 +192,7 @@ const {
   getTargetNodeLabel,
   branches,
   parallelChildren
-} = useNodeOperations(props.selectedNode, {
+} = useNodeOperations(selectedNodeRef, {
   updateNode: (nodeId: string, updates: Partial<Node>) =>
     emit("updateNode", nodeId, updates),
   deleteNode: (nodeId: string) => emit("deleteNode", nodeId)
@@ -153,6 +212,21 @@ const parallelConfig = computed(() => {
  */
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value;
+}
+
+/**
+ * 更新边数据
+ */
+function handleUpdateEdge(edgeId: string, updates: Partial<Edge>) {
+  emit("updateEdge", edgeId, updates);
+}
+
+/**
+ * 删除边
+ */
+function handleDeleteEdge() {
+  if (!props.selectedEdge) return;
+  emit("deleteEdge", props.selectedEdge.id);
 }
 
 /**
@@ -184,37 +258,50 @@ function handleDeleteNode() {
 }
 
 // ==================== 分支相关 ====================
+// 注意：branchNodes 保存到数据库，包含分支配置（name, condition, handlerId）
+// targetNodeId 从 edges 中动态读取
+// 实际的分支连接关系通过 edge 表的 sourceHandle 字段管理
 
 /**
  * 添加分支
+ * 在 branchNodes 中添加一个新的分支配置
  */
 function handleAddBranch() {
   if (!props.selectedNode) return;
 
-  const currentBranches = props.selectedNode.data.branches || [];
-  const newBranchIndex = currentBranches.length + 1;
+  const currentBranchNodes = props.selectedNode.data.branchNodes || {};
+  const newBranchIndex = Object.keys(currentBranchNodes).length + 1;
+  const newBranchName = `branch${newBranchIndex}`;
 
-  const newBranch: BranchConfig = {
-    name: `branch${newBranchIndex}`,
-    condition: ""
+  const newBranchNodes = {
+    ...currentBranchNodes,
+    [newBranchName]: {
+      name: newBranchName,
+      condition: "",
+      handlerId: undefined
+    }
   };
 
-  updateNodeData("branches", [...currentBranches, newBranch]);
+  updateNodeData("branchNodes", newBranchNodes);
 }
 
 /**
  * 删除分支
+ * 注意：删除分支时，需要同时删除对应的 edge
  */
 function handleRemoveBranch(index: number) {
   if (!props.selectedNode) return;
 
-  const currentBranches = props.selectedNode.data.branches || [];
-  if (currentBranches.length <= 1) return;
+  const branchesArray = branches.value;
+  if (!branchesArray[index]) return;
 
-  const newBranches = currentBranches.filter(
-    (_: any, i: number) => i !== index
-  );
-  updateNodeData("branches", newBranches);
+  const branchToRemove = branchesArray[index];
+  const currentBranchNodes = { ...props.selectedNode.data.branchNodes };
+
+  // 删除对应的分支配置
+  delete currentBranchNodes[branchToRemove.name];
+
+  updateNodeData("branchNodes", currentBranchNodes);
 }
 
 /**
@@ -223,14 +310,21 @@ function handleRemoveBranch(index: number) {
 function handleUpdateBranchName(index: number, name: string) {
   if (!props.selectedNode) return;
 
-  const currentBranches = [...(props.selectedNode.data.branches || [])];
-  if (currentBranches[index]) {
-    currentBranches[index] = {
-      ...currentBranches[index],
-      name
-    };
-    updateNodeData("branches", currentBranches);
-  }
+  const branchesArray = branches.value;
+  if (!branchesArray[index]) return;
+
+  const oldBranchName = branchesArray[index].name;
+  const currentBranchNodes = { ...props.selectedNode.data.branchNodes };
+
+  // 删除旧的 key，添加新的 key
+  const branchConfig = currentBranchNodes[oldBranchName];
+  delete currentBranchNodes[oldBranchName];
+  currentBranchNodes[name] = {
+    ...branchConfig,
+    name
+  };
+
+  updateNodeData("branchNodes", currentBranchNodes);
 }
 
 /**
@@ -239,62 +333,94 @@ function handleUpdateBranchName(index: number, name: string) {
 function handleUpdateBranchCondition(index: number, condition: string) {
   if (!props.selectedNode) return;
 
-  const currentBranches = [...(props.selectedNode.data.branches || [])];
-  if (currentBranches[index]) {
-    currentBranches[index] = {
-      ...currentBranches[index],
-      condition
-    };
-    updateNodeData("branches", currentBranches);
-  }
+  const branchesArray = branches.value;
+  if (!branchesArray[index]) return;
+
+  const branchName = branchesArray[index].name;
+  const currentBranchNodes = { ...props.selectedNode.data.branchNodes };
+
+  currentBranchNodes[branchName] = {
+    ...currentBranchNodes[branchName],
+    condition
+  };
+
+  updateNodeData("branchNodes", currentBranchNodes);
 }
 
 // ==================== 并行节点相关 ====================
+// 注意：
+// - parallelChildren 从 parallelConfig.threads 和 edges 计算得出，用于 UI 显示
+// - parallelConfig.threads 保存任务信息（名称、handler ID 等），会保存到数据库
+// - edges 保存连接关系，通过 sourceHandle 关联到 thread.id
 
 /**
  * 添加并行子节点
+ * 在 parallelConfig.threads 中添加一个新任务
  */
 function handleAddParallelChild() {
   if (!props.selectedNode) return;
 
-  const currentChildren = props.selectedNode.data.parallelChildren || [];
-  const newChildIndex = currentChildren.length + 1;
+  const currentConfig = props.selectedNode.data.parallelConfig || {};
+  const currentThreads = currentConfig.threads || [];
+  const newThreadId = `thread-${Date.now()}`; // 生成唯一 ID
+  const newThreadIndex = currentThreads.length + 1;
 
-  const newChild: ParallelChildConfig = {
-    name: `任务${newChildIndex}`
+  const newThread = {
+    id: newThreadId,
+    name: `任务${newThreadIndex}`
   };
 
-  updateNodeData("parallelChildren", [...currentChildren, newChild]);
+  updateNodeData("parallelConfig", {
+    ...currentConfig,
+    threads: [...currentThreads, newThread]
+  });
 }
 
 /**
  * 删除并行子节点
+ * 从 parallelConfig.threads 中删除任务
+ * TODO: 应该同时删除对应的 edge 和清除子节点的 parent_node_id
  */
 function handleRemoveParallelChild(index: number) {
   if (!props.selectedNode) return;
 
-  const currentChildren = props.selectedNode.data.parallelChildren || [];
-  if (currentChildren.length <= 1) return;
+  const currentConfig = props.selectedNode.data.parallelConfig || {};
+  const currentThreads = currentConfig.threads || [];
+  if (currentThreads.length <= 1) return;
 
-  const newChildren = currentChildren.filter(
-    (_: any, i: number) => i !== index
-  );
-  updateNodeData("parallelChildren", newChildren);
+  // TODO: 删除对应的 edge 和清除子节点的 parent_node_id
+  // const threadId = currentThreads[index].id;
+  // 找到并删除 sourceHandle 包含 `parallel-${threadId}` 的 edge
+  // 调用 API 清除对应子节点的 parent_node_id
+
+  const newThreads = currentThreads.filter((_: any, i: number) => i !== index);
+
+  updateNodeData("parallelConfig", {
+    ...currentConfig,
+    threads: newThreads
+  });
 }
 
 /**
  * 更新并行子节点名称
+ * 更新 parallelConfig.threads 中的任务名称
  */
 function handleUpdateParallelChildName(index: number, name: string) {
   if (!props.selectedNode) return;
 
-  const currentChildren = [...(props.selectedNode.data.parallelChildren || [])];
-  if (currentChildren[index]) {
-    currentChildren[index] = {
-      ...currentChildren[index],
+  const currentConfig = props.selectedNode.data.parallelConfig || {};
+  const currentThreads = [...(currentConfig.threads || [])];
+
+  if (currentThreads[index]) {
+    currentThreads[index] = {
+      ...currentThreads[index],
       name
     };
-    updateNodeData("parallelChildren", currentChildren);
+
+    updateNodeData("parallelConfig", {
+      ...currentConfig,
+      threads: currentThreads
+    });
   }
 }
 

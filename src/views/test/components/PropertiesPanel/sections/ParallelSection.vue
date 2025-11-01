@@ -27,17 +27,6 @@
           />
         </el-select>
       </el-form-item>
-
-      <el-form-item label="超时时间 (ms)">
-        <el-input-number
-          :model-value="parallelConfig.timeout"
-          :min="0"
-          :step="1000"
-          style="width: 100%"
-          placeholder="30000"
-          @change="handleUpdateTimeout"
-        />
-      </el-form-item>
     </el-form>
 
     <!-- 并行子节点列表 -->
@@ -64,15 +53,24 @@
             <el-input
               :model-value="child.name"
               placeholder="如: 任务1, 数据处理"
-              @input="handleUpdateChildName(index, $event)"
+              @update:modelValue="handleUpdateChildName(index, $event)"
             />
           </el-form-item>
-
           <el-form-item label="目标节点">
             <el-tag v-if="child.targetNodeId" type="success">
               {{ getTargetNodeLabel(child.targetNodeId) }}
             </el-tag>
             <el-tag v-else type="info">未连接</el-tag>
+          </el-form-item>
+          <el-form-item label="超时时间 (ms)">
+            <el-input-number
+              :model-value="child.timeout"
+              :min="0"
+              :step="100000"
+              style="width: 100%"
+              placeholder="30000"
+              @change="handleUpdateTimeout"
+            />
           </el-form-item>
         </el-form>
       </div>

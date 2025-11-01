@@ -26,9 +26,10 @@ import { createNode } from "../components/nodeConfig";
 /**
  * 操作结果类型
  */
-export interface OperationResult {
+export interface OperationResult<T = any> {
   success: boolean;
   error?: string;
+  data?: T;
 }
 
 /**
@@ -150,6 +151,9 @@ export interface WorkflowOptions {
   // VueFlow 实例 ID（可选，用于多实例场景）
   vueFlowId?: string;
 
+  // 生命周期回调
+  onNodesLoaded?: () => void | Promise<void>;
+
   // 节点操作回调
   beforeAddNode?: (
     context: NodeOperationContext
@@ -196,6 +200,7 @@ export interface WorkflowOptions {
 export function useWorkflow(options: WorkflowOptions = {}) {
   // Vue Flow 实例
   const vueFlowInstance = useVueFlow(options.vueFlowId);
+
   const {
     getNodes,
     addEdges,
@@ -220,9 +225,50 @@ export function useWorkflow(options: WorkflowOptions = {}) {
 
   // 状态管理
   const selectedNodeId = ref<string | null>(null);
+  const selectedEdgeId = ref<string | null>(null);
 
   const setSelectedNodeId = (nodeId: string | null) => {
     selectedNodeId.value = nodeId;
+    // 清除边的选中状态
+    selectedEdgeId.value = null;
+
+    // 更新所有节点的选中状态
+    const allNodes = getNodes.value;
+    const updatedNodes = allNodes.map(node => ({
+      ...node,
+      selected: node.id === nodeId
+    }));
+    setNodes(updatedNodes);
+
+    // 清除所有边的选中状态
+    const allEdges = getEdges.value;
+    const updatedEdges = allEdges.map(edge => ({
+      ...edge,
+      selected: false
+    }));
+    setEdges(updatedEdges);
+  };
+
+  const setSelectedEdgeId = (edgeId: string | null) => {
+    selectedEdgeId.value = edgeId;
+    // 清除节点的选中状态
+    selectedNodeId.value = null;
+
+    // 清除所有节点的选中状态
+    const allNodes = getNodes.value;
+    const updatedNodes = allNodes.map(node => ({
+      ...node,
+      selected: false
+    }));
+    setNodes(updatedNodes);
+
+    // 更新所有边的选中状态
+    const allEdges = getEdges.value;
+    const updatedEdges = allEdges.map(edge => ({
+      ...edge,
+      selected: edge.id === edgeId
+    }));
+    setEdges(updatedEdges);
   };
 
   // 节点类型注册
@@ -242,6 +288,12 @@ export function useWorkflow(options: WorkflowOptions = {}) {
   const selectedNode = computed(() => {
     if (!selectedNodeId.value) return null;
     return findNode(selectedNodeId.value);
+  });
+
+  // 计算属性：当前选中的边
+  const selectedEdge = computed(() => {
+    if (!selectedEdgeId.value) return null;
+    return findEdge(selectedEdgeId.value);
   });
 
   // ==================== 节点操作 ====================
@@ -269,12 +321,26 @@ export function useWorkflow(options: WorkflowOptions = {}) {
         }
       }
 
-      // 创建节点
+      // 创建节点，并设置为选中状态
       const newNode = createNode(nodeType, position);
-      addNodes([newNode]);
 
-      ElMessage.success("节点添加成功");
-      return { success: true };
+      // 取消所有现有节点的选中状态
+      const allNodes = getNodes.value;
+      const updatedNodes = allNodes.map(node => ({
+        ...node,
+        selected: false
+      }));
+      setNodes(updatedNodes);
+
+      // 添加新节点，并设置为选中状态
+      addNodes([{ ...newNode, selected: true } as Node]);
+
+      // 更新选中节点 ID
+      selectedNodeId.value = newNode.id;
+
+      // 静默添加，不显示成功消息（避免拖拽时消息过多）
+      // 返回新节点的 ID，以便调用者可以选中它
+      return { success: true, data: newNode.id };
     } catch (error: any) {
       const errorMsg = error?.message || "添加节点失败";
       ElMessage.error(errorMsg);
@@ -314,6 +380,26 @@ export function useWorkflow(options: WorkflowOptions = {}) {
   }
 
   /**
+   * 更新边ID（用于将前端临时ID替换为后端返回的ID）
+   */
+  function updateEdgeIdInternal(oldId: string, newId: string): void {
+    const edges = getEdges.value;
+
+    // 更新边ID
+    const updatedEdges = edges.map(edge =>
+      edge.id === oldId ? { ...edge, id: newId } : edge
+    );
+
+    // 应用更新
+    setEdges(updatedEdges);
+
+    // 如果选中的边是被更新的边，也需要更新选中状态
+    if (selectedEdgeId.value === oldId) {
+      selectedEdgeId.value = newId;
+    }
+  }
+
+  /**
    * 更新节点
    */
   async function updateNodeWithCallback(
@@ -340,7 +426,7 @@ export function useWorkflow(options: WorkflowOptions = {}) {
       // 更新节点
       updateNode(nodeId, updates);
 
-      ElMessage.success("节点更新成功");
+      // 静默更新，不显示成功消息（避免频繁修改属性时消息过多）
       return { success: true };
     } catch (error: any) {
       const errorMsg = error?.message || "更新节点失败";
@@ -522,7 +608,7 @@ export function useWorkflow(options: WorkflowOptions = {}) {
       Object.assign(targetEdge, updates);
       setEdges(edges);
 
-      ElMessage.success("连接更新成功");
+      // 静默更新，不显示成功消息
       return { success: true };
     } catch (error: any) {
       const errorMsg = error?.message || "更新连接失败";
@@ -684,6 +770,11 @@ export function useWorkflow(options: WorkflowOptions = {}) {
       setNodes(data.nodes);
       setEdges(data.edges);
 
+      // 调用节点加载完成回调
+      if (options.onNodesLoaded) {
+        await options.onNodesLoaded();
+      }
+
       if (!silent) {
         ElMessage.success(
           `成功导入 ${data.nodes.length} 个节点和 ${data.edges.length} 条连接`
@@ -795,6 +886,8 @@ export function useWorkflow(options: WorkflowOptions = {}) {
     // 状态
     selectedNodeId,
     selectedNode,
+    selectedEdgeId,
+    selectedEdge,
     nodeTypes,
     nodes: getNodes,
     edges: getEdges,
@@ -810,6 +903,7 @@ export function useWorkflow(options: WorkflowOptions = {}) {
     // 连线操作
     addEdge: addEdgeWithCallback,
     updateEdge: updateEdgeWithCallback,
+    updateEdgeId: updateEdgeIdInternal,
     deleteEdge: deleteEdgeWithCallback,
 
     // 批量操作
@@ -836,6 +930,7 @@ export function useWorkflow(options: WorkflowOptions = {}) {
     getViewport,
     screenToFlowCoordinate,
     project,
-    setSelectedNodeId
+    setSelectedNodeId,
+    setSelectedEdgeId
   };
 }

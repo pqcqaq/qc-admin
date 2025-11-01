@@ -1,15 +1,15 @@
-import { computed } from "vue";
+import { computed, type Ref } from "vue";
 import type { Node } from "@vue-flow/core";
 import { useVueFlow } from "@vue-flow/core";
 import type { BranchConfig, ParallelChildConfig, NodeData } from "../types";
 
 /**
  * 节点操作 Hook
- * @param selectedNode - 当前选中的节点
+ * @param selectedNode - 当前选中的节点（响应式引用或普通值）
  * @param emit - 事件发射器
  */
 export function useNodeOperations(
-  selectedNode: Node | null,
+  selectedNode: Node | null | Ref<Node | null>,
   emit: {
     updateNode: (nodeId: string, updates: Partial<Node>) => void;
     deleteNode: (nodeId: string) => void;
@@ -17,15 +17,28 @@ export function useNodeOperations(
 ) {
   const { getNodes, getEdges } = useVueFlow({ id: "workflow-canvas" });
 
+  // 确保 selectedNode 是响应式的
+  const selectedNodeRef = computed(() => {
+    if (
+      selectedNode &&
+      typeof selectedNode === "object" &&
+      "value" in selectedNode
+    ) {
+      return (selectedNode as Ref<Node | null>).value;
+    }
+    return selectedNode as Node | null;
+  });
+
   /**
    * 更新节点数据
    */
   const updateNodeData = (key: string, value: any) => {
-    if (!selectedNode) return;
+    const node = selectedNodeRef.value;
+    if (!node) return;
 
-    emit.updateNode(selectedNode.id, {
+    emit.updateNode(node.id, {
       data: {
-        ...selectedNode.data,
+        ...node.data,
         [key]: value
       }
     });
@@ -35,11 +48,12 @@ export function useNodeOperations(
    * 批量更新节点数据
    */
   const updateNodeDataBatch = (updates: Partial<NodeData>) => {
-    if (!selectedNode) return;
+    const node = selectedNodeRef.value;
+    if (!node) return;
 
-    emit.updateNode(selectedNode.id, {
+    emit.updateNode(node.id, {
       data: {
-        ...selectedNode.data,
+        ...node.data,
         ...updates
       }
     });
@@ -49,11 +63,12 @@ export function useNodeOperations(
    * 更新节点位置
    */
   const updateNodePosition = (axis: "x" | "y", value: number) => {
-    if (!selectedNode) return;
+    const node = selectedNodeRef.value;
+    if (!node) return;
 
-    emit.updateNode(selectedNode.id, {
+    emit.updateNode(node.id, {
       position: {
-        ...selectedNode.position,
+        ...node.position,
         [axis]: value
       }
     });
@@ -63,9 +78,10 @@ export function useNodeOperations(
    * 更新节点可连接状态
    */
   const updateNodeConnectable = (value: boolean) => {
-    if (!selectedNode) return;
+    const node = selectedNodeRef.value;
+    if (!node) return;
 
-    emit.updateNode(selectedNode.id, {
+    emit.updateNode(node.id, {
       connectable: value
     });
   };
@@ -74,8 +90,9 @@ export function useNodeOperations(
    * 删除节点
    */
   const deleteNode = () => {
-    if (!selectedNode) return;
-    emit.deleteNode(selectedNode.id);
+    const node = selectedNodeRef.value;
+    if (!node) return;
+    emit.deleteNode(node.id);
   };
 
   /**
@@ -89,22 +106,29 @@ export function useNodeOperations(
 
   /**
    * 计算当前节点的分支配置（包含目标节点ID）
+   * 从 node.data.branchNodes 和 edges 计算得出
    */
   const branches = computed<BranchConfig[]>(() => {
-    if (!selectedNode) return [];
+    const node = selectedNodeRef.value;
+    if (!node) return [];
 
-    const nodeBranches = selectedNode.data.branches || [];
+    // 从 node.data.branchNodes 读取分支配置
+    const branchNodes = node.data.branchNodes || {};
     const edges = getEdges.value;
 
-    return nodeBranches.map((branch: BranchConfig) => {
+    return Object.values(branchNodes).map((branchConfig: any) => {
+      // 构建完整的 sourceHandle ID（格式：nodeId-branch-branchName）
+      const expectedSourceHandle = `${node.id}-branch-${branchConfig.name}`;
+
+      // 查找对应的 edge（精确匹配 sourceHandle）
       const edge = edges.find(
-        e =>
-          e.source === selectedNode.id &&
-          e.sourceHandle?.includes(`branch-${branch.name}`)
+        e => e.source === node.id && e.sourceHandle === expectedSourceHandle
       );
 
       return {
-        ...branch,
+        name: branchConfig.name,
+        condition: branchConfig.condition || "",
+        handlerId: branchConfig.handlerId,
         targetNodeId: edge?.target
       };
     });
@@ -112,22 +136,29 @@ export function useNodeOperations(
 
   /**
    * 计算当前节点的并行子节点配置（包含目标节点ID）
+   * 从 parallelConfig.threads 和 edges 计算得出
    */
   const parallelChildren = computed<ParallelChildConfig[]>(() => {
-    if (!selectedNode) return [];
+    const node = selectedNodeRef.value;
+    if (!node) return [];
 
-    const nodeChildren = selectedNode.data.parallelChildren || [];
+    // 从 parallelConfig.threads 读取任务信息
+    const threads = node.data.parallelConfig?.threads || [];
     const edges = getEdges.value;
 
-    return nodeChildren.map((child: ParallelChildConfig, index: number) => {
+    return threads.map((thread: any) => {
+      // 构建完整的 sourceHandle ID（格式：nodeId-parallel-threadId）
+      const expectedSourceHandle = `${node.id}-parallel-${thread.id}`;
+
+      // 查找对应的 edge（精确匹配 sourceHandle）
       const edge = edges.find(
-        e =>
-          e.source === selectedNode.id &&
-          e.sourceHandle?.includes(`parallel-${index}`)
+        e => e.source === node.id && e.sourceHandle === expectedSourceHandle
       );
 
       return {
-        ...child,
+        id: thread.id,
+        name: thread.name,
+        handlerId: thread.handlerId,
         targetNodeId: edge?.target
       };
     });

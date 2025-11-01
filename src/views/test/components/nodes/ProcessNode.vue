@@ -60,37 +60,14 @@ defineProps<Props>();
   min-width: 160px;
   min-height: 80px;
   padding: 14px 18px;
-  overflow: hidden;
   color: white;
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   border-radius: 12px;
   box-shadow: 0 4px 15px rgb(79 172 254 / 30%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &::before {
-    position: absolute;
-    inset: 0;
-    content: "";
-    background: linear-gradient(
-      135deg,
-      rgb(255 255 255 / 15%) 0%,
-      rgb(255 255 255 / 0%) 100%
-    );
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
+  transition: box-shadow 0.3s ease;
 
   &:hover {
     box-shadow: 0 6px 20px rgb(79 172 254 / 40%);
-    transform: translateY(-2px) scale(1.02);
-
-    &::before {
-      opacity: 1;
-    }
-
-    .node-icon {
-      transform: rotate(180deg);
-    }
   }
 }
 
@@ -163,7 +140,6 @@ defineProps<Props>();
 
     &:hover {
       box-shadow: 0 3px 12px rgb(103 194 58 / 60%);
-      transform: scale(1.3);
     }
   }
 
@@ -173,7 +149,6 @@ defineProps<Props>();
 
     &:hover {
       box-shadow: 0 3px 12px rgb(79 172 254 / 60%);
-      transform: scale(1.3);
     }
   }
 }

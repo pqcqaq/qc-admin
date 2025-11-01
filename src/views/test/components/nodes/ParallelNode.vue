@@ -19,34 +19,31 @@
       <span v-if="data.description" class="node-description">{{
         data.description
       }}</span>
-      <span v-if="parallelChildren.length > 0" class="parallel-count">
-        <span class="count-badge">{{ parallelChildren.length }}</span>
+      <span v-if="parallelThreads.length > 0" class="parallel-count">
+        <span class="count-badge">{{ parallelThreads.length }}</span>
         并行任务
       </span>
     </div>
 
     <!-- 主输出连接点（右侧，用于 next_node） -->
-    <Handle
+    <!-- <Handle
       :id="`${id}-next`"
       type="source"
       :position="Position.Right"
       class="node-handle next-handle"
-    >
-      <span class="handle-label">下一步</span>
-    </Handle>
+    /> -->
 
     <!-- 并行子节点连接点（底部） -->
+    <!-- 使用 thread.id 作为 handle ID，而不是 index -->
     <Handle
-      v-for="(child, index) in parallelChildren"
-      :id="`${id}-parallel-${index}`"
-      :key="child.id || index"
+      v-for="(thread, index) in parallelThreads"
+      :id="`${id}-parallel-${thread.id}`"
+      :key="thread.id"
       type="source"
       :position="Position.Bottom"
       :style="getParallelHandleStyle(index)"
       class="node-handle parallel-handle"
-    >
-      <span class="handle-label">{{ child.name || `任务${index + 1}` }}</span>
-    </Handle>
+    />
   </div>
 </template>
 
@@ -62,14 +59,14 @@ interface Props {
 
 const props = defineProps<Props>();
 
-// 并行子节点配置
-const parallelChildren = computed(() => {
-  return props.data.parallelChildren || [];
+// 从 parallelConfig.threads 读取并行任务配置
+const parallelThreads = computed(() => {
+  return props.data.parallelConfig?.threads || [];
 });
 
 // 计算并行子节点连接点的位置
 const getParallelHandleStyle = (index: number) => {
-  const total = parallelChildren.value.length;
+  const total = parallelThreads.value.length;
   if (total === 0) return {};
 
   // 均匀分布在底部
@@ -88,33 +85,14 @@ const getParallelHandleStyle = (index: number) => {
   min-width: 180px;
   min-height: 100px;
   padding: 16px 20px;
-  overflow: hidden;
   color: white;
   background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
   border-radius: 16px;
   box-shadow: 0 4px 15px rgb(168 237 234 / 40%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &::before {
-    position: absolute;
-    inset: 0;
-    content: "";
-    background: linear-gradient(
-      135deg,
-      rgb(255 255 255 / 20%) 0%,
-      rgb(255 255 255 / 0%) 100%
-    );
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
+  transition: box-shadow 0.3s ease;
 
   &:hover {
     box-shadow: 0 6px 20px rgb(168 237 234 / 50%);
-    transform: translateY(-2px);
-
-    &::before {
-      opacity: 1;
-    }
   }
 }
 
@@ -139,7 +117,6 @@ const getParallelHandleStyle = (index: number) => {
   font-size: 24px;
   font-weight: bold;
   filter: drop-shadow(0 2px 4px rgb(0 0 0 / 10%));
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .node-content {
@@ -199,7 +176,6 @@ const getParallelHandleStyle = (index: number) => {
 }
 
 .node-handle {
-  position: relative;
   width: 12px;
   height: 12px;
   border: 3px solid white;
@@ -232,42 +208,5 @@ const getParallelHandleStyle = (index: number) => {
       box-shadow: 0 3px 12px rgb(255 167 81 / 70%);
     }
   }
-}
-
-.handle-label {
-  position: absolute;
-  z-index: 999;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: white;
-  white-space: nowrap;
-  pointer-events: none;
-  background: linear-gradient(
-    135deg,
-    rgb(0 0 0 / 85%) 0%,
-    rgb(0 0 0 / 75%) 100%
-  );
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
-  opacity: 0;
-  backdrop-filter: blur(4px);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.node-handle:hover .handle-label {
-  opacity: 1;
-}
-
-.next-handle .handle-label {
-  top: 50%;
-  right: calc(100% + 10px);
-  transform: translateY(-50%);
-}
-
-.parallel-handle .handle-label {
-  top: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
 }
 </style>

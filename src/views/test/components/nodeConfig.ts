@@ -45,10 +45,10 @@ export const nodeTemplates: NodeTemplate[] = [
       description: "",
       color: "#E6A23C",
       config: {},
-      branches: [
-        { name: "true", condition: "result === true" },
-        { name: "false", condition: "result === false" }
-      ]
+      branchNodes: {
+        true: { name: "true", condition: "result === true" },
+        false: { name: "false", condition: "result === false" }
+      }
     }
   },
   {
@@ -63,9 +63,12 @@ export const nodeTemplates: NodeTemplate[] = [
       config: {},
       parallelConfig: {
         mode: "all",
-        timeout: 30000
-      },
-      parallelChildren: [{ name: "任务1" }, { name: "任务2" }]
+        timeout: 30000,
+        threads: [
+          { id: "thread-1", name: "任务1" },
+          { id: "thread-2", name: "任务2" }
+        ]
+      }
     }
   },
   {

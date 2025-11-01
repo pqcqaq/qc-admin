@@ -25,7 +25,7 @@
         <el-input
           :model-value="node.data.label"
           placeholder="请输入节点名称"
-          @input="updateData('label', $event)"
+          @update:modelValue="updateData('label', $event)"
         />
       </el-form-item>
 
@@ -36,7 +36,7 @@
           type="textarea"
           :rows="3"
           placeholder="请输入节点描述"
-          @input="updateData('description', $event)"
+          @update:modelValue="updateData('description', $event)"
         />
       </el-form-item>
 
@@ -49,12 +49,60 @@
         />
       </el-form-item>
 
+      <!-- 提示词（LLM节点） -->
+      <el-form-item v-if="node.type === 'llm_caller'" label="提示词">
+        <el-input
+          :model-value="node.data.prompt"
+          type="textarea"
+          :rows="4"
+          placeholder="请输入提示词"
+          @update:modelValue="updateData('prompt', $event)"
+        />
+      </el-form-item>
+
+      <!-- 异步执行 -->
+      <el-form-item label="异步执行">
+        <el-switch
+          :model-value="node.data.async"
+          @change="updateData('async', $event)"
+        />
+        <span class="form-hint">启用后，节点将异步执行，不阻塞工作流</span>
+      </el-form-item>
+
+      <!-- 超时时间 -->
+      <el-form-item label="超时时间 (ms)">
+        <el-input-number
+          :model-value="node.data.timeout"
+          :min="0"
+          :step="1000"
+          style="width: 100%"
+          placeholder="30000"
+          @change="updateData('timeout', $event)"
+        />
+        <span class="form-hint">节点执行的最大时间，超时将中断执行</span>
+      </el-form-item>
+
+      <!-- 重试次数 -->
+      <el-form-item label="重试次数">
+        <el-input-number
+          :model-value="node.data.retryCount"
+          :min="0"
+          :max="10"
+          :step="1"
+          style="width: 100%"
+          placeholder="0"
+          @change="updateData('retryCount', $event)"
+        />
+        <span class="form-hint">节点执行失败时的重试次数</span>
+      </el-form-item>
+
       <!-- 加载状态 -->
       <el-form-item label="加载状态">
         <el-switch
           :model-value="node.data.loading"
           @change="updateData('loading', $event)"
         />
+        <span class="form-hint">仅用于 UI 显示</span>
       </el-form-item>
     </el-form>
   </el-collapse-item>
@@ -99,6 +147,14 @@ const updateData = (key: string, value: any) => {
   .el-icon {
     color: #409eff;
   }
+}
+
+.form-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #909399;
 }
 
 :deep(.el-form-item) {

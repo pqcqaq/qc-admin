@@ -1,11 +1,12 @@
 <template>
   <div
-    class="flow-container"
+    class="flow-editor-view"
     @contextmenu="onContextMenu"
     @mousedown="onCanvasMouseDown"
     @mousemove="onCanvasMouseMove"
     @mouseup="onCanvasMouseUp"
   >
+    <!-- Vue Flow 画布 -->
     <VueFlow
       id="workflow-canvas"
       ref="vueFlowRef"
@@ -71,8 +72,11 @@
       v-model="openSidePanel"
       :dark-mode="darkMode"
       :selected-node="selectedNode"
+      :selected-edge="selectedEdge"
       @update-node="handleUpdateNode"
       @delete-node="handleDeleteNode"
+      @update-edge="handleUpdateEdge"
+      @delete-edge="handleDeleteEdge"
     />
 
     <!-- 右键菜单 -->
@@ -102,15 +106,9 @@
     />
   </div>
 </template>
+
 <script setup lang="ts">
-import {
-  ref,
-  onMounted,
-  onBeforeUnmount,
-  shallowRef,
-  computed,
-  watch
-} from "vue";
+import { ref, shallowRef, computed } from "vue";
 import {
   VueFlow,
   MarkerType,
@@ -133,102 +131,47 @@ import {
 import { ElMessage, ElMessageBox } from "element-plus";
 
 // 导入组件
-import NodePalette from "./components/NodePalette.vue";
-import PropertiesPanel from "./components/PropertiesPanel/index.vue";
-import ContextMenu from "./components/ContextMenu.vue";
+import NodePalette from "./NodePalette.vue";
+import PropertiesPanel from "./PropertiesPanel/index.vue";
+import ContextMenu from "./ContextMenu.vue";
 
 // 导入类型和配置
-import { NodeTypeEnum, type NodeTemplate } from "./components/types";
-import { useWorkflow } from "./composables/useWorkflow";
+import type { NodeTemplate } from "./types";
+import { getNodeConnectionRule, NodeTypeEnum } from "./types";
+import type { useWorkflow } from "../composables/useWorkflow";
+
+// Props
+interface Props {
+  workflow: ReturnType<typeof useWorkflow>;
+  darkMode?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  darkMode: false
+});
+
+// Emits
+const emit = defineEmits<{
+  "update:darkMode": [value: boolean];
+}>();
 
 // Vue Flow 实例
 const vueFlowRef = ref();
 
-// 工作流配置
-const workflowOptions = {
-  vueFlowId: "workflow-canvas",
-
-  // 节点操作回调
-  beforeAddNode: async (context: any) => {
-    // 业务逻辑：限制节点数量
-    if (context.allNodes.length >= 50) {
-      return { success: false, error: "节点数量已达上限（最多50个）" };
-    }
-
-    // 业务逻辑：限制开始节点只能有一个
-    if (context.nodeType === NodeTypeEnum.USER_INPUT) {
-      const startNodes = context.allNodes.filter(
-        (n: any) => n.type === NodeTypeEnum.USER_INPUT
-      );
-      if (startNodes.length >= 1) {
-        return { success: false, error: "只能有一个开始节点" };
-      }
-    }
-
-    // 业务逻辑：限制结束节点只能有一个
-    if (context.nodeType === NodeTypeEnum.END_NODE) {
-      const endNodes = context.allNodes.filter(
-        (n: any) => n.type === NodeTypeEnum.END_NODE
-      );
-      if (endNodes.length >= 1) {
-        return { success: false, error: "只能有一个结束节点" };
-      }
-    }
-
-    return { success: true };
-  },
-
-  beforeDeleteNode: async (context: any) => {
-    // 业务逻辑：删除前检查是否有关联连线
-    if (context.relatedEdges.length > 0) {
-      console.log(
-        `节点有 ${context.relatedEdges.length} 条关联连线，将一并删除`
-      );
-    }
-    return { success: true };
-  },
-
-  beforeAddEdge: async (context: any) => {
-    // 业务逻辑：防止自连接
-    if (context.connection.source === context.connection.target) {
-      return { success: false, error: "不能连接到自己" };
-    }
-
-    // 业务逻辑：防止重复连接
-    const existingEdge = context.allEdges.find(
-      (e: any) =>
-        e.source === context.connection.source &&
-        e.target === context.connection.target
-    );
-    if (existingEdge) {
-      return { success: false, error: "已存在相同的连接" };
-    }
-
-    return { success: true };
-  }
-};
-
-// 延迟初始化 workflow（在 onMounted 中初始化）
-const workflowRef = shallowRef<any>(null);
-
-// 使用 ref 和 computed 来访问 workflow 的属性
-const nodes = ref<Node[]>([]);
-const edges = ref<Edge[]>([]);
-const nodeTypes = shallowRef<any>({});
-
-// 使用 computed 来保持 selectedNode 的响应式
-const selectedNode = computed(() => {
-  return workflowRef.value?.selectedNode?.value || null;
-});
+// 从 workflow 获取数据
+const nodes = computed(() => props.workflow.nodes.value);
+const edges = computed(() => props.workflow.edges.value);
+const nodeTypes = shallowRef(props.workflow.nodeTypes);
+const selectedNode = computed(() => props.workflow.selectedNode.value || null);
+const selectedEdge = computed(() => props.workflow.selectedEdge.value || null);
 
 // 状态管理
-const openSidePanel = ref(false);
-const openNodePalette = ref(false);
-const darkMode = ref(false);
 const isDraggingFromPalette = ref(false);
 const draggingNodeId = ref<string | null>(null);
 const mouseDownPos = ref<{ x: number; y: number } | null>(null);
 const isDragging = ref(false);
+const openSidePanel = ref(false);
+const openNodePalette = ref(false);
 
 // 右键菜单状态
 const contextMenu = ref<{
@@ -250,220 +193,77 @@ const contextMenu = ref<{
 // 默认边配置
 const defaultEdgeOptions: DefaultEdgeOptions = {
   type: "smoothstep",
-  animated: true,
-  markerEnd: { type: MarkerType.ArrowClosed }
+  animated: false,
+  markerEnd: { type: MarkerType.ArrowClosed },
+  style: { strokeWidth: 2 }
 };
-
-// 初始化数据
-const initData = async () => {
-  const initialNodes: Node[] = [
-    {
-      id: "1",
-      type: NodeTypeEnum.USER_INPUT,
-      data: { label: "用户输入", color: "#67C23A" },
-      position: { x: 250, y: 50 }
-    },
-    {
-      id: "2",
-      type: NodeTypeEnum.TODO_TASK_GENERATOR,
-      data: {
-        label: "待办任务生成",
-        description: "处理数据",
-        color: "#409EFF"
-      },
-      position: { x: 250, y: 180 }
-    },
-    {
-      id: "3",
-      type: NodeTypeEnum.CONDITION_CHECKER,
-      data: { label: "条件检查", description: "条件分支", color: "#E6A23C" },
-      position: { x: 250, y: 350 }
-    },
-    {
-      id: "4",
-      type: NodeTypeEnum.TODO_TASK_GENERATOR,
-      data: { label: "待办任务生成2", color: "#409EFF" },
-      position: { x: 100, y: 520 }
-    },
-    {
-      id: "5",
-      type: NodeTypeEnum.TODO_TASK_GENERATOR,
-      data: { label: "待办任务生成3", color: "#409EFF" },
-      position: { x: 400, y: 520 }
-    },
-    {
-      id: "6",
-      type: NodeTypeEnum.END_NODE,
-      data: { label: "结束", color: "#F56C6C" },
-      position: { x: 250, y: 680 }
-    }
-  ];
-
-  const initialEdges: Edge[] = [
-    {
-      id: "e1-2",
-      source: "1",
-      target: "2",
-      label: "开始"
-    },
-    {
-      id: "e2-3",
-      source: "2",
-      target: "3",
-      label: "处理完成"
-    },
-    {
-      id: "e3-4",
-      source: "3",
-      target: "4",
-      label: "条件A"
-    },
-    {
-      id: "e3-5",
-      source: "3",
-      target: "5",
-      label: "条件B"
-    },
-    {
-      id: "e4-6",
-      source: "4",
-      target: "6"
-    },
-    {
-      id: "e5-6",
-      source: "5",
-      target: "6"
-    }
-  ];
-
-  // 使用 workflow 的 importData 方法初始化数据（静默模式）
-  await workflowRef.value!.importData({
-    nodes: initialNodes,
-    edges: initialEdges
-  });
-};
-
-// 存储 watch 停止函数
-const watchStopHandles: (() => void)[] = [];
-
-// 在组件挂载后初始化
-onMounted(async () => {
-  // 初始化 workflow
-  workflowRef.value = useWorkflow(workflowOptions);
-
-  // 同步数据
-  nodeTypes.value = workflowRef.value.nodeTypes;
-
-  // 使用 watch 来同步 nodes 和 edges
-  const stopNodesWatch = watch(
-    () => workflowRef.value?.nodes?.value,
-    newNodes => {
-      if (newNodes) {
-        nodes.value = newNodes;
-      }
-    },
-    { immediate: true, deep: true }
-  );
-  watchStopHandles.push(stopNodesWatch);
-
-  const stopEdgesWatch = watch(
-    () => workflowRef.value?.edges?.value,
-    newEdges => {
-      if (newEdges) {
-        edges.value = newEdges;
-      }
-    },
-    { immediate: true, deep: true }
-  );
-  watchStopHandles.push(stopEdgesWatch);
-
-  // 初始化数据
-  await initData();
-});
-
-// 在组件卸载前清理
-onBeforeUnmount(() => {
-  // 停止所有 watch
-  watchStopHandles.forEach(stop => stop());
-  watchStopHandles.length = 0;
-});
 
 /**
  * 控制按钮事件
  */
 function resetTransform() {
-  workflowRef.value?.fitView({ duration: 300 });
+  props.workflow?.fitView({ duration: 300 });
 }
 
 function fitView() {
-  workflowRef.value?.fitView({ padding: 0.2, duration: 300 });
+  props.workflow?.fitView({ padding: 0.2, duration: 300 });
 }
 
 function changeDarkMode() {
-  darkMode.value = !darkMode.value;
+  emit("update:darkMode", !props.darkMode);
 }
 
 async function logToObject() {
-  await workflowRef.value?.exportData();
+  await props.workflow?.exportData();
 }
 
 async function clearCanvas() {
-  await workflowRef.value?.clearCanvas();
+  await props.workflow?.clearCanvas();
 }
 
 /**
  * 节点事件处理
  */
 function onNodeClick({ node }: { node: Node }) {
-  workflowRef.value?.setSelectedNodeId(node.id);
+  props.workflow?.setSelectedNodeId(node.id);
 }
 
 function onEdgeClick({ edge }: { edge: any }) {
-  console.log("Edge clicked:", edge);
+  props.workflow?.setSelectedEdgeId(edge.id);
 }
 
-// 画布鼠标按下事件
+// 画布鼠标事件
 function onCanvasMouseDown(event: MouseEvent) {
-  // 检查是否点击在节点上
   const target = event.target as HTMLElement;
   const nodeElement = target.closest(".vue-flow__node");
 
   if (nodeElement) {
     const nodeId = nodeElement.getAttribute("data-id");
     if (nodeId) {
-      console.log("Mouse down on node:", nodeId);
-      // 记录鼠标按下位置和节点ID，但不立即设置 draggingNodeId
       mouseDownPos.value = { x: event.clientX, y: event.clientY };
       isDragging.value = false;
-      // 暂存节点ID，等待移动
       (event.currentTarget as any)._pendingDragNodeId = nodeId;
     }
   }
 }
 
-// 画布鼠标移动事件
 function onCanvasMouseMove(event: MouseEvent) {
   if (mouseDownPos.value && !isDragging.value) {
-    // 计算移动距离
     const dx = event.clientX - mouseDownPos.value.x;
     const dy = event.clientY - mouseDownPos.value.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
-    // 如果移动距离超过5像素，认为是拖拽
     if (distance > 5) {
       isDragging.value = true;
       const nodeId = (event.currentTarget as any)._pendingDragNodeId;
       if (nodeId) {
-        console.log("Start dragging node:", nodeId);
         draggingNodeId.value = nodeId;
       }
     }
   }
 }
 
-// 画布鼠标抬起事件
 function onCanvasMouseUp() {
-  console.log("Mouse up, clearing draggingNodeId");
   mouseDownPos.value = null;
   isDragging.value = false;
   draggingNodeId.value = null;
@@ -473,7 +273,172 @@ function onCanvasMouseUp() {
  * 连接事件处理
  */
 async function onConnect(params: Connection) {
-  await workflowRef.value?.addEdge(params);
+  console.log("[onConnect] 创建连接:", params);
+
+  const sourceNode = props.workflow
+    ?.getAllNodes()
+    .find(n => n.id === params.source);
+  const targetNode = props.workflow
+    ?.getAllNodes()
+    .find(n => n.id === params.target);
+
+  if (!sourceNode) {
+    ElMessage.error("源节点不存在");
+    return;
+  }
+
+  if (!targetNode) {
+    ElMessage.error("目标节点不存在");
+    return;
+  }
+
+  // 验证连接规则
+  if (params.source === params.target) {
+    ElMessage.warning("不能连接到自己");
+    return;
+  }
+
+  const sourceRule = getNodeConnectionRule(sourceNode.type);
+  const targetRule = getNodeConnectionRule(targetNode.type);
+
+  if (sourceRule.maxOutputConnections === 0) {
+    ElMessage.warning("该节点不能连接到其他节点");
+    return;
+  }
+
+  if (targetNode.type === "start") {
+    ElMessage.warning("开始节点不能被其他节点连接");
+    return;
+  }
+
+  const existingEdges = props.workflow?.getAllEdges() || [];
+  const duplicateEdge = existingEdges.find(
+    e =>
+      e.source === params.source &&
+      e.target === params.target &&
+      e.sourceHandle === params.sourceHandle
+  );
+  if (duplicateEdge) {
+    ElMessage.warning("该连接已存在");
+    return;
+  }
+
+  const isBranchConnection = params.sourceHandle?.includes("-branch-");
+  const isParallelChildConnection = params.sourceHandle?.includes("-parallel-");
+
+  if (!isBranchConnection && !isParallelChildConnection) {
+    // 普通连接验证
+    if (!sourceRule.canHaveNextNode) {
+      ElMessage.warning(
+        `${sourceNode.data?.label || "该节点"}不能有普通输出连接，请使用分支连接`
+      );
+      return;
+    }
+
+    const existingNextNodeEdges = existingEdges.filter(
+      e =>
+        e.source === params.source &&
+        !e.sourceHandle?.includes("-branch-") &&
+        !e.sourceHandle?.includes("-parallel-")
+    );
+
+    if (
+      sourceRule.maxOutputConnections === 1 &&
+      existingNextNodeEdges.length > 0
+    ) {
+      ElMessage.warning("该节点已有一个主输出连接，请先断开现有连接");
+      return;
+    }
+  } else if (isBranchConnection) {
+    // 分支连接验证
+    if (!sourceRule.canHaveBranches) {
+      ElMessage.warning(`${sourceNode.data?.label || "该节点"}不支持分支连接`);
+      return;
+    }
+
+    // 检查目标节点是否可以作为分支的目标
+    if (!targetRule.canBeParallel) {
+      ElMessage.warning(
+        `${targetNode.data?.label || "目标节点"}不能作为分支的目标节点`
+      );
+      return;
+    }
+  } else if (isParallelChildConnection) {
+    // 并行子节点连接验证
+    if (!targetRule.canBeParallel) {
+      ElMessage.warning(
+        `${targetNode.data?.label || "目标节点"}不能作为并行子节点`
+      );
+      return;
+    }
+  }
+
+  type EnhancedConnection = Connection & {
+    data: any;
+    type: string;
+    animated: boolean;
+    label: string;
+    style: object;
+  };
+
+  const enhancedParams: EnhancedConnection = {
+    ...params,
+    data: {},
+    type: "smoothstep",
+    animated: false,
+    label: "",
+    style: { strokeWidth: 2 }
+  };
+
+  // 处理条件节点的分支连接
+  if (
+    sourceNode.type === NodeTypeEnum.CONDITION_CHECKER &&
+    params.sourceHandle
+  ) {
+    // 使用正则提取分支名称（格式：nodeId-branch-branchName）
+    const match = params.sourceHandle.match(/-branch-(.+)$/);
+    if (match) {
+      const branchName = match[1];
+      enhancedParams.type = "smoothstep";
+      enhancedParams.animated = true;
+      enhancedParams.label = branchName;
+      enhancedParams.style = {
+        strokeWidth: 2,
+        stroke: "#E6A23C"
+      };
+      enhancedParams.data = {
+        branchName,
+        label: branchName
+      };
+    }
+  }
+
+  // 处理并行节点的任务连接
+  if (
+    sourceNode.type === NodeTypeEnum.PARALLEL_EXECUTOR &&
+    params.sourceHandle
+  ) {
+    // 使用正则检测并行连接（格式：nodeId-parallel-threadId）
+    const match = params.sourceHandle.match(/-parallel-(.+)$/);
+    if (match) {
+      const threadId = match[1];
+      enhancedParams.type = "smoothstep";
+      enhancedParams.animated = true;
+      enhancedParams.label = "并行";
+      enhancedParams.style = {
+        strokeWidth: 2,
+        stroke: "#909399",
+        strokeDasharray: "5,5"
+      };
+      enhancedParams.data = {
+        isParallelChild: true,
+        threadId, // 保存 thread ID，方便后续使用
+        label: "并行"
+      };
+    }
+  }
+
+  await props.workflow?.addEdge(enhancedParams);
 }
 
 /**
@@ -496,20 +461,20 @@ async function onDrop(event: DragEvent) {
 
   try {
     const template: NodeTemplate = JSON.parse(templateData);
-    const position = workflowRef.value?.screenToFlowCoordinate({
+    const position = props.workflow?.screenToFlowCoordinate({
       x: event.clientX,
       y: event.clientY
     });
 
     if (position) {
-      await workflowRef.value?.addNode(template.type, position);
+      await props.workflow?.addNode(template.type, position);
     }
   } catch (error) {
     console.error("Failed to create node:", error);
   }
 }
 
-function onPaletteDragStart(template: NodeTemplate) {
+function onPaletteDragStart(_template: NodeTemplate) {
   isDraggingFromPalette.value = true;
 }
 
@@ -517,22 +482,20 @@ function onPaletteDragStart(template: NodeTemplate) {
  * 节点更新和删除
  */
 async function handleUpdateNode(nodeId: string, updates: any) {
-  await workflowRef.value?.updateNode(nodeId, updates);
+  await props.workflow?.updateNode(nodeId, updates);
 }
 
 async function handleDeleteNode(nodeId: string) {
-  await workflowRef.value?.deleteNode(nodeId);
+  await props.workflow?.deleteNode(nodeId);
 }
 
 /**
  * 右键菜单处理
  */
-// 阻止默认右键菜单
 function onContextMenu(event: MouseEvent) {
   event.preventDefault();
 }
 
-// 画布右键菜单
 function onPaneContextMenu(event: MouseEvent) {
   event.preventDefault();
   contextMenu.value = {
@@ -545,7 +508,6 @@ function onPaneContextMenu(event: MouseEvent) {
   };
 }
 
-// 节点右键菜单
 function onNodeContextMenu({ event, node }: any) {
   const mouseEvent = event as MouseEvent;
   mouseEvent.preventDefault();
@@ -560,7 +522,6 @@ function onNodeContextMenu({ event, node }: any) {
   };
 }
 
-// 连线右键菜单
 function onEdgeContextMenu({ event, edge }: any) {
   const mouseEvent = event as MouseEvent;
   mouseEvent.preventDefault();
@@ -575,12 +536,10 @@ function onEdgeContextMenu({ event, edge }: any) {
   };
 }
 
-// 关闭右键菜单
 function closeContextMenu() {
   contextMenu.value.visible = false;
 }
 
-// 画布操作
 function handleZoomIn() {
   if (vueFlowRef.value) {
     vueFlowRef.value.zoomIn();
@@ -594,17 +553,15 @@ function handleZoomOut() {
 }
 
 async function handleSelectAll() {
-  await workflowRef.value?.selectAllNodes();
+  await props.workflow?.selectAllNodes();
 }
 
-// 节点操作
 function handleEditNodeFromMenu(node: Node) {
-  workflowRef.value?.setSelectedNodeId(node.id);
+  props.workflow?.setSelectedNodeId(node.id);
   ElMessage.info("请在右侧属性面板编辑节点");
 }
 
 function handleCopyNode(node: Node) {
-  // 复制节点数据到剪贴板
   const nodeData = JSON.stringify(node);
   navigator.clipboard.writeText(nodeData).then(() => {
     ElMessage.success("节点已复制到剪贴板");
@@ -612,7 +569,7 @@ function handleCopyNode(node: Node) {
 }
 
 async function handleDuplicateNode(node: Node) {
-  await workflowRef.value?.cloneNode(node);
+  await props.workflow?.cloneNode(node);
 }
 
 async function handleDeleteNodeFromMenu(node: Node) {
@@ -620,13 +577,12 @@ async function handleDeleteNodeFromMenu(node: Node) {
 }
 
 async function handleToggleConnectable(node: Node) {
-  await workflowRef.value?.updateNode(node.id, {
+  await props.workflow?.updateNode(node.id, {
     connectable: !node.connectable
   });
   ElMessage.success(node.connectable ? "已禁用节点连接" : "已启用节点连接");
 }
 
-// 连线操作
 async function handleEditEdge(edge: Edge) {
   try {
     const { value } = await ElMessageBox.prompt(
@@ -639,31 +595,46 @@ async function handleEditEdge(edge: Edge) {
       }
     );
 
-    await workflowRef.value?.updateEdge(edge.id, { label: value });
+    await props.workflow?.updateEdge(edge.id, { label: value });
   } catch {
     // 用户取消
   }
 }
 
 async function handleDeleteEdgeFromMenu(edge: Edge) {
-  await workflowRef.value?.deleteEdge(edge.id);
+  await props.workflow?.deleteEdge(edge.id);
 }
 
 async function handleToggleAnimation(edge: Edge) {
-  await workflowRef.value?.updateEdge(edge.id, {
+  await props.workflow?.updateEdge(edge.id, {
     animated: !edge.animated
   });
   ElMessage.success(edge.animated ? "已关闭动画" : "已开启动画");
 }
+
+/**
+ * 从属性面板更新边
+ */
+async function handleUpdateEdge(edgeId: string, updates: Partial<Edge>) {
+  await props.workflow?.updateEdge(edgeId, updates);
+}
+
+/**
+ * 从属性面板删除边
+ */
+async function handleDeleteEdge(edgeId: string) {
+  await props.workflow?.deleteEdge(edgeId);
+}
 </script>
+
 <style lang="scss" scoped>
-.flow-container {
+.flow-editor-view {
   position: relative;
-  width: calc(100% - 25px);
-  height: calc(100% - 25px);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  background-color: #f5f7fa;
-  transition: background-color 0.3s ease;
 }
 
 .basic-flow {

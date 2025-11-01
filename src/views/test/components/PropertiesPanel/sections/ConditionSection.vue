@@ -29,7 +29,7 @@
             <el-input
               :model-value="branch.name"
               placeholder="如: true, false, case1"
-              @input="handleUpdateBranchName(index, $event)"
+              @update:modelValue="handleUpdateBranchName(index, $event)"
             />
           </el-form-item>
 
@@ -39,7 +39,7 @@
               type="textarea"
               :rows="2"
               placeholder="如: result === true"
-              @input="handleUpdateBranchCondition(index, $event)"
+              @update:modelValue="handleUpdateBranchCondition(index, $event)"
             />
           </el-form-item>
 

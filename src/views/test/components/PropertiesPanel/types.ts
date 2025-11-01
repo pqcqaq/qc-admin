@@ -5,7 +5,8 @@ export { NodeTypeEnum } from "../types";
  */
 export interface BranchConfig {
   name: string;
-  condition: string;
+  condition?: string;
+  handlerId?: string;
   targetNodeId?: string;
 }
 
@@ -15,6 +16,7 @@ export interface BranchConfig {
 export interface ParallelChildConfig {
   name: string;
   targetNodeId?: string;
+  timeout: number;
 }
 
 /**

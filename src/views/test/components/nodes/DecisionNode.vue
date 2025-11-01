@@ -47,7 +47,10 @@ const props = defineProps<Props>();
 
 // 获取分支配置
 const branches = computed<BranchConfig[]>(() => {
-  return props.data.branches || [{ name: "true" }, { name: "false" }];
+  if (!props.data?.branchNodes) {
+    return [];
+  }
+  return Object.values(props.data.branchNodes);
 });
 
 // 根据分支索引计算连接点位置
@@ -100,25 +103,11 @@ const getBranchStyle = (index: number) => {
   justify-content: center;
   width: 130px;
   height: 130px;
-  overflow: hidden;
   color: white;
   background: linear-gradient(135deg, #ffa751 0%, #ffe259 100%);
   box-shadow: 0 4px 15px rgb(255 167 81 / 40%);
   transform: rotate(45deg);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &::before {
-    position: absolute;
-    inset: 0;
-    content: "";
-    background: linear-gradient(
-      135deg,
-      rgb(255 255 255 / 20%) 0%,
-      rgb(255 255 255 / 0%) 100%
-    );
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
+  transition: box-shadow 0.3s ease;
 
   &::after {
     position: absolute;
@@ -134,11 +123,6 @@ const getBranchStyle = (index: number) => {
 
   &:hover {
     box-shadow: 0 6px 20px rgb(255 167 81 / 50%);
-    transform: rotate(45deg) scale(1.05);
-
-    &::before {
-      opacity: 1;
-    }
   }
 }
 
@@ -191,22 +175,18 @@ const getBranchStyle = (index: number) => {
 
     &:hover {
       box-shadow: 0 3px 12px rgb(103 194 58 / 70%);
-      transform: scale(1.3);
     }
   }
 
   &.branch-handle {
-    position: relative;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     box-shadow: 0 2px 8px rgb(102 126 234 / 50%);
 
     &:hover {
       box-shadow: 0 3px 12px rgb(102 126 234 / 70%);
-      transform: scale(1.3);
 
       .branch-label {
         opacity: 1;
-        transform: scale(1);
       }
     }
   }
@@ -232,8 +212,7 @@ const getBranchStyle = (index: number) => {
   box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
   opacity: 0;
   backdrop-filter: blur(4px);
-  transform: translate(-50%, -50%) scale(0.8);
-  transform-origin: center;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translate(-50%, -50%);
+  transition: opacity 0.2s ease;
 }
 </style>

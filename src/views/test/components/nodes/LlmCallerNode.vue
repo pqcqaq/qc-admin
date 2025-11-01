@@ -62,37 +62,14 @@ const promptPreview = computed(() => {
   position: relative;
   min-width: 200px;
   padding: 14px 16px;
-  overflow: hidden;
   color: white;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 14px;
   box-shadow: 0 4px 15px rgb(102 126 234 / 35%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &::before {
-    position: absolute;
-    inset: 0;
-    content: "";
-    background: linear-gradient(
-      135deg,
-      rgb(255 255 255 / 15%) 0%,
-      rgb(255 255 255 / 0%) 100%
-    );
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
+  transition: box-shadow 0.3s ease;
 
   &:hover {
     box-shadow: 0 6px 20px rgb(102 126 234 / 45%);
-    transform: translateY(-2px) scale(1.01);
-
-    &::before {
-      opacity: 1;
-    }
-
-    .node-icon {
-      transform: scale(1.1) rotate(5deg);
-    }
   }
 }
 
@@ -179,7 +156,6 @@ const promptPreview = computed(() => {
 
     &:hover {
       box-shadow: 0 3px 12px rgb(103 194 58 / 70%);
-      transform: scale(1.3);
     }
   }
 
@@ -189,7 +165,6 @@ const promptPreview = computed(() => {
 
     &:hover {
       box-shadow: 0 3px 12px rgb(102 126 234 / 70%);
-      transform: scale(1.3);
     }
   }
 }
