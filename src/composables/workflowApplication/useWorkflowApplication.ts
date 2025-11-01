@@ -49,6 +49,10 @@ import {
   type Snapshot
 } from "./diff";
 import { validateEdgeConnection, validateEdgeDeletion } from "./edgeValidation";
+import {
+  mapNodeToCreateRequest,
+  mapNodeToUpdateRequest
+} from "./nodeFieldMapper";
 
 const threshold = 0.1;
 
@@ -73,6 +77,7 @@ function convertNodeResponseToVueFlowNode(node: WorkflowNodeResponse): Node {
       apiConfig: node.apiConfig,
       parallelConfig: node.parallelConfig,
       branchNodes: node.branchNodes, // 直接使用 branchNodes
+      workflowApplicationId: node.workflowApplicationId, // 直接使用 workflowApplicationId
       async: node.async,
       timeout: node.timeout,
       retryCount: node.retryCount,
@@ -653,30 +658,17 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
 
       // 准备要创建的节点数据
       const nodesToCreateData = nodesToCreate.map(node => {
-        const nodeData: any = {
-          name: node.data.label || node.id,
-          type: node.type as any,
-          description: node.data.description || "",
-          config: node.data.config || {},
-          applicationId: currentApplication.value.id,
-          positionX: node.position.x,
-          positionY: node.position.y,
-          prompt: node.data.prompt,
-          processorLanguage: node.data.processorLanguage,
-          processorCode: node.data.processorCode,
-          apiConfig: node.data.apiConfig,
-          parallelConfig: node.data.parallelConfig,
-          async: node.data.async,
-          timeout: node.data.timeout,
-          retryCount: node.data.retryCount,
-          color: node.data.color
-        };
+        // 使用字段映射器自动转换
+        const nodeData = mapNodeToCreateRequest(
+          node,
+          currentApplication.value.id
+        );
 
         // 对于条件节点，计算并添加 branchNodes
         if (node.type === NodeTypeEnum.CONDITION_CHECKER) {
           const branchNodes = calculateBranchNodesFromNode(currentEdges, node);
           if (branchNodes && Object.keys(branchNodes).length > 0) {
-            nodeData.branchNodes = branchNodes;
+            (nodeData as any).branchNodes = branchNodes;
           }
         }
 
@@ -686,113 +678,41 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
       // 准备要更新的节点数据
       const nodesToUpdateData = nodesToUpdate.map(node => {
         const snapshotNode = snapshot.value.nodes.get(node.id);
-        const nodeData: any = {};
 
         // 计算字段级别的变化
-        if (snapshotNode) {
-          const fieldChangesInfo = getNodeFieldChanges(
-            currentEdges,
-            node,
-            snapshotNode
-          );
-          if (fieldChangesInfo) {
-            const changedFieldsList = fieldChangesInfo.changedFields;
-            stats.totalFieldsChanged += changedFieldsList.length;
-            debugLog(
-              "工作流保存",
-              `节点 ${node.id} 的变更字段: ${changedFieldsList.join(", ")}`
-            );
+        if (!snapshotNode) {
+          return { id: node.id, data: {} };
+        }
 
-            // 字段映射表：前端字段路径 -> 后端字段名 + 取值函数
-            const fieldMapping: Record<
-              string,
-              { key: string; getValue: () => any }
-            > = {
-              "data.label": {
-                key: "name",
-                getValue: () => node.data.label || node.id
-              },
-              position: {
-                key: "position",
-                getValue: () => ({
-                  positionX: node.position.x,
-                  positionY: node.position.y
-                })
-              },
-              "data.description": {
-                key: "description",
-                getValue: () => node.data.description || ""
-              },
-              "data.config": {
-                key: "config",
-                getValue: () => node.data.config || {}
-              },
-              "data.prompt": {
-                key: "prompt",
-                getValue: () => node.data.prompt
-              },
-              "data.processorLanguage": {
-                key: "processorLanguage",
-                getValue: () => node.data.processorLanguage
-              },
-              "data.processorCode": {
-                key: "processorCode",
-                getValue: () => node.data.processorCode
-              },
-              "data.apiConfig": {
-                key: "apiConfig",
-                getValue: () => node.data.apiConfig
-              },
-              "data.parallelConfig": {
-                key: "parallelConfig",
-                getValue: () => node.data.parallelConfig
-              },
-              "data.async": {
-                key: "async",
-                getValue: () => node.data.async
-              },
-              "data.timeout": {
-                key: "timeout",
-                getValue: () => node.data.timeout
-              },
-              "data.retryCount": {
-                key: "retryCount",
-                getValue: () => node.data.retryCount
-              },
-              "data.color": {
-                key: "color",
-                getValue: () => node.data.color
-              }
-            };
+        const fieldChangesInfo = getNodeFieldChanges(
+          currentEdges,
+          node,
+          snapshotNode
+        );
 
-            // 根据变更字段动态添加数据
-            changedFieldsList.forEach(field => {
-              const mapping = fieldMapping[field];
-              if (mapping) {
-                const value = mapping.getValue();
-                // 特殊处理 position（需要展开为 positionX 和 positionY）
-                if (mapping.key === "position") {
-                  Object.assign(nodeData, value);
-                } else {
-                  nodeData[mapping.key] = value;
-                }
-              }
-            });
+        if (!fieldChangesInfo) {
+          return { id: node.id, data: {} };
+        }
 
-            // 对于条件节点，检查 branchNodes 是否变更
-            if (node.type === NodeTypeEnum.CONDITION_CHECKER) {
-              const branchNodes = calculateBranchNodesFromNode(
-                currentEdges,
-                node
-              );
-              if (branchNodes && Object.keys(branchNodes).length > 0) {
-                if (
-                  changedFieldsList.includes("data.branchNodes") ||
-                  changedFieldsList.length > 0
-                ) {
-                  nodeData.branchNodes = branchNodes;
-                }
-              }
+        const changedFieldsList = fieldChangesInfo.changedFields;
+        stats.totalFieldsChanged += changedFieldsList.length;
+        debugLog(
+          "工作流保存",
+          `节点 ${node.id} 的变更字段: ${changedFieldsList.join(", ")}`
+        );
+
+        // 使用字段映射器自动转换变更字段
+        const nodeData = mapNodeToUpdateRequest(node, changedFieldsList);
+
+        // 对于条件节点，检查 branchNodes 是否变更
+        if (node.type === NodeTypeEnum.CONDITION_CHECKER) {
+          const branchNodes = calculateBranchNodesFromNode(currentEdges, node);
+          if (branchNodes && Object.keys(branchNodes).length > 0) {
+            if (
+              changedFieldsList.includes("data.branchNodes") ||
+              changedFieldsList.length > 0
+            ) {
+              (nodeData as any).branchNodes = branchNodes;
             }
           }
         }

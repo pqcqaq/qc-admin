@@ -10,7 +10,8 @@ export enum NodeTypeEnum {
   API_CALLER = "api_caller",
   DATA_PROCESSOR = "data_processor",
   WHILE_LOOP = "while_loop",
-  LLM_CALLER = "llm_caller"
+  LLM_CALLER = "llm_caller",
+  WORKFLOW = "workflow"
 }
 
 /**
@@ -87,6 +88,7 @@ export interface NodeData {
   parallelConfig?: ParallelConfig; // 并行配置（会保存到数据库）
   branchNodes?: Record<string, BranchConfig>; // 分支配置（判断节点，会保存到数据库）
   parallelChildren?: ParallelChildConfig[]; // 并行子节点配置（并行节点，仅用于 UI，不保存到数据库）
+  workflowApplicationId?: string; // 引用的工作流应用ID（workflow节点专用）
   async?: boolean; // 是否异步执行
   timeout?: number; // 超时时间
   retryCount?: number; // 重试次数

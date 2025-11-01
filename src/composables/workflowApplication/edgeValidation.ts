@@ -55,7 +55,11 @@ export enum HandleType {
 
   // ========== LLM调用器 (LLM_CALLER) ==========
   LLM_CALLER_INPUT = "llm_caller_input", // LLM调用器的输入
-  LLM_CALLER_OUTPUT = "llm_caller_output" // LLM调用器的输出
+  LLM_CALLER_OUTPUT = "llm_caller_output", // LLM调用器的输出
+
+  // ========== 工作流节点 (WORKFLOW) ==========
+  WORKFLOW_INPUT = "workflow_input", // 工作流节点的输入
+  WORKFLOW_OUTPUT = "workflow_output" // 工作流节点的输出
 }
 
 /**
@@ -89,6 +93,7 @@ export const HANDLE_COMPATIBILITY: Record<
     [HandleType.DATA_PROCESSOR_INPUT]: true, // ✅ 通用输出 → 数据处理器输入
     [HandleType.LOOP_INPUT]: true, // ✅ 通用输出 → 循环输入
     [HandleType.LLM_CALLER_INPUT]: true, // ✅ 通用输出 → LLM调用器输入
+    [HandleType.WORKFLOW_INPUT]: true, // ✅ 通用输出 → 工作流输入
     [HandleType.END_INPUT]: true // ✅ 通用输出 → 结束节点输入
   },
 
@@ -102,6 +107,7 @@ export const HANDLE_COMPATIBILITY: Record<
     [HandleType.DATA_PROCESSOR_INPUT]: true, // ✅ 开始 → 数据处理器
     [HandleType.LOOP_INPUT]: true, // ✅ 开始 → 循环节点
     [HandleType.LLM_CALLER_INPUT]: true, // ✅ 开始 → LLM调用器
+    [HandleType.WORKFLOW_INPUT]: true, // ✅ 开始 → 工作流节点
     [HandleType.END_INPUT]: true // ✅ 开始 → 结束（允许空流程）
   },
 
@@ -125,6 +131,7 @@ export const HANDLE_COMPATIBILITY: Record<
     [HandleType.DATA_PROCESSOR_INPUT]: true, // ✅ 任务生成器 → 数据处理器
     [HandleType.LOOP_INPUT]: true, // ✅ 任务生成器 → 循环节点
     [HandleType.LLM_CALLER_INPUT]: true, // ✅ 任务生成器 → LLM调用器
+    [HandleType.WORKFLOW_INPUT]: true, // ✅ 任务生成器 → 工作流节点
     [HandleType.END_INPUT]: true // ✅ 任务生成器 → 结束
   },
 
@@ -143,6 +150,7 @@ export const HANDLE_COMPATIBILITY: Record<
     [HandleType.DATA_PROCESSOR_INPUT]: true, // ✅ 条件分支 → 数据处理器
     [HandleType.LOOP_INPUT]: true, // ✅ 条件分支 → 循环节点
     [HandleType.LLM_CALLER_INPUT]: true, // ✅ 条件分支 → LLM调用器
+    [HandleType.WORKFLOW_INPUT]: true, // ✅ 条件分支 → 工作流节点
     [HandleType.END_INPUT]: true // ✅ 条件分支 → 结束
   },
 
@@ -176,6 +184,7 @@ export const HANDLE_COMPATIBILITY: Record<
     [HandleType.DATA_PROCESSOR_INPUT]: true, // ✅ API调用器 → 数据处理器
     [HandleType.LOOP_INPUT]: true, // ✅ API调用器 → 循环节点
     [HandleType.LLM_CALLER_INPUT]: true, // ✅ API调用器 → LLM调用器
+    [HandleType.WORKFLOW_INPUT]: true, // ✅ API调用器 → 工作流节点
     [HandleType.END_INPUT]: true // ✅ API调用器 → 结束
   },
 
@@ -194,6 +203,7 @@ export const HANDLE_COMPATIBILITY: Record<
     [HandleType.DATA_PROCESSOR_INPUT]: true, // ✅ 数据处理器 → 数据处理器
     [HandleType.LOOP_INPUT]: true, // ✅ 数据处理器 → 循环节点
     [HandleType.LLM_CALLER_INPUT]: true, // ✅ 数据处理器 → LLM调用器
+    [HandleType.WORKFLOW_INPUT]: true, // ✅ 数据处理器 → 工作流节点
     [HandleType.END_INPUT]: true // ✅ 数据处理器 → 结束
   },
 
@@ -225,6 +235,7 @@ export const HANDLE_COMPATIBILITY: Record<
     [HandleType.DATA_PROCESSOR_INPUT]: true, // ✅ 循环结束 → 数据处理器
     [HandleType.LOOP_INPUT]: true, // ✅ 循环结束 → 循环节点
     [HandleType.LLM_CALLER_INPUT]: true, // ✅ 循环结束 → LLM调用器
+    [HandleType.WORKFLOW_INPUT]: true, // ✅ 循环结束 → 工作流节点
     [HandleType.END_INPUT]: true // ✅ 循环结束 → 结束
   },
 
@@ -248,7 +259,27 @@ export const HANDLE_COMPATIBILITY: Record<
     [HandleType.DATA_PROCESSOR_INPUT]: true, // ✅ LLM调用器 → 数据处理器
     [HandleType.LOOP_INPUT]: true, // ✅ LLM调用器 → 循环节点
     [HandleType.LLM_CALLER_INPUT]: true, // ✅ LLM调用器 → LLM调用器
+    [HandleType.WORKFLOW_INPUT]: true, // ✅ LLM调用器 → 工作流节点
     [HandleType.END_INPUT]: true // ✅ LLM调用器 → 结束
+  },
+
+  // ========== 工作流节点输入 (WORKFLOW_INPUT) ==========
+  [HandleType.WORKFLOW_INPUT]: {
+    // 输入不能作为源连接点
+  },
+
+  // ========== 工作流节点输出 (WORKFLOW_OUTPUT) ==========
+  [HandleType.WORKFLOW_OUTPUT]: {
+    [HandleType.COMMON_INPUT]: true, // ✅ 工作流 → 通用输入
+    [HandleType.TASK_GENERATOR_INPUT]: true, // ✅ 工作流 → 任务生成器
+    [HandleType.CONDITION_INPUT]: true, // ✅ 工作流 → 条件检查器
+    [HandleType.PARALLEL_EXECUTOR_INPUT]: true, // ✅ 工作流 → 并行执行器
+    [HandleType.API_CALLER_INPUT]: true, // ✅ 工作流 → API调用器
+    [HandleType.DATA_PROCESSOR_INPUT]: true, // ✅ 工作流 → 数据处理器
+    [HandleType.LOOP_INPUT]: true, // ✅ 工作流 → 循环节点
+    [HandleType.LLM_CALLER_INPUT]: true, // ✅ 工作流 → LLM调用器
+    [HandleType.WORKFLOW_INPUT]: true, // ✅ 工作流 → 工作流节点（允许嵌套）
+    [HandleType.END_INPUT]: true // ✅ 工作流 → 结束
   }
 };
 
@@ -357,6 +388,14 @@ const NODE_OUTPUT_RULES: Record<string, NodeOutputRule> = {
     maxNormalOutputs: 1,
     maxBranchOutputs: 0,
     maxParallelOutputs: 0
+  },
+  [NodeTypeEnum.WORKFLOW]: {
+    canHaveNormalOutput: true,
+    canHaveBranchOutput: false,
+    canHaveParallelOutput: false,
+    maxNormalOutputs: 1,
+    maxBranchOutputs: 0,
+    maxParallelOutputs: 0
   }
 };
 
@@ -397,6 +436,10 @@ const NODE_INPUT_RULES: Record<string, NodeInputRule> = {
     maxInputs: -1
   },
   [NodeTypeEnum.LLM_CALLER]: {
+    canBeTarget: true,
+    maxInputs: -1
+  },
+  [NodeTypeEnum.WORKFLOW]: {
     canBeTarget: true,
     maxInputs: -1
   }
@@ -504,7 +547,11 @@ export const HANDLE_TYPE_LABELS: Record<HandleType, string> = {
 
   // LLM调用器
   [HandleType.LLM_CALLER_INPUT]: "LLM调用器输入",
-  [HandleType.LLM_CALLER_OUTPUT]: "LLM调用器输出"
+  [HandleType.LLM_CALLER_OUTPUT]: "LLM调用器输出",
+
+  // 工作流节点
+  [HandleType.WORKFLOW_INPUT]: "工作流输入",
+  [HandleType.WORKFLOW_OUTPUT]: "工作流输出"
 };
 
 /**
@@ -645,6 +692,17 @@ export const HANDLE_CONNECTION_LIMITS: Record<
   },
 
   [HandleType.LLM_CALLER_OUTPUT]: {
+    maxInputConnections: 0,
+    maxOutputConnections: 1
+  },
+
+  // ========== 工作流节点 ==========
+  [HandleType.WORKFLOW_INPUT]: {
+    maxInputConnections: -1,
+    maxOutputConnections: 0
+  },
+
+  [HandleType.WORKFLOW_OUTPUT]: {
     maxInputConnections: 0,
     maxOutputConnections: 1
   }

@@ -15,7 +15,8 @@ export const NODE_TYPE_TAG_MAP: Record<
   [NodeTypeEnum.API_CALLER]: "primary",
   [NodeTypeEnum.WHILE_LOOP]: "info",
   [NodeTypeEnum.LLM_CALLER]: "primary",
-  [NodeTypeEnum.TODO_TASK_GENERATOR]: "warning"
+  [NodeTypeEnum.TODO_TASK_GENERATOR]: "warning",
+  [NodeTypeEnum.WORKFLOW]: "info"
 };
 
 /**
@@ -30,7 +31,8 @@ export const NODE_TYPE_LABEL_MAP: Record<string, string> = {
   [NodeTypeEnum.API_CALLER]: "API调用节点",
   [NodeTypeEnum.DATA_PROCESSOR]: "数据处理节点",
   [NodeTypeEnum.WHILE_LOOP]: "循环节点",
-  [NodeTypeEnum.LLM_CALLER]: "LLM调用节点"
+  [NodeTypeEnum.LLM_CALLER]: "LLM调用节点",
+  [NodeTypeEnum.WORKFLOW]: "工作流节点"
 };
 
 /**

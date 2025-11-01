@@ -116,6 +116,13 @@
               @update-data="handleUpdateNodeData"
             />
 
+            <!-- 工作流节点专用：工作流配置 -->
+            <WorkflowConfigSection
+              v-if="selectedNode.type === NodeTypeEnum.WORKFLOW"
+              :node="selectedNode"
+              @update-data="handleUpdateNodeData"
+            />
+
             <!-- 连接设置 -->
             <ConnectionSection
               :node="selectedNode"
@@ -137,7 +144,8 @@ import {
   PositionSection,
   ConnectionSection,
   ConditionSection,
-  ParallelSection
+  ParallelSection,
+  WorkflowConfigSection
 } from "./sections";
 import LlmConfigSection from "./sections/LlmConfigSection.vue";
 import ApiConfigSection from "./sections/ApiConfigSection.vue";

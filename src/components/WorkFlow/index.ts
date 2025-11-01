@@ -12,6 +12,7 @@ export { default as ApiCallerNode } from "./nodes/ApiCallerNode.vue";
 export { default as DataProcessorNode } from "./nodes/DataProcessorNode.vue";
 export { default as WhileLoopNode } from "./nodes/WhileLoopNode.vue";
 export { default as LlmCallerNode } from "./nodes/LlmCallerNode.vue";
+export { default as WorkflowNode } from "./nodes/WorkflowNode.vue";
 export { default as CustomNode } from "./nodes/CustomNode.vue";
 
 // 面板组件

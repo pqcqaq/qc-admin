@@ -92,6 +92,7 @@ export const getNodeHash = (edges: Edge[], node: Node): string => {
       apiConfig: node.data.apiConfig,
       parallelConfig: node.data.parallelConfig,
       branchNodes, // 从 branches 和 edges 计算得出
+      workflowApplicationId: node.data.workflowApplicationId, // 工作流节点引用的应用ID
       async: node.data.async,
       timeout: node.data.timeout,
       retryCount: node.data.retryCount,
@@ -166,6 +167,7 @@ export const getNodeFieldChanges = (
     "processorCode",
     "apiConfig",
     "parallelConfig",
+    "workflowApplicationId", // 工作流节点引用的应用ID
     "async",
     "timeout",
     "retryCount",

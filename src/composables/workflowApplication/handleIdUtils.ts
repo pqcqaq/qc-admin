@@ -143,6 +143,14 @@ export const LlmCallerHandles = {
 };
 
 /**
+ * 工作流节点 Handle ID
+ */
+export const WorkflowHandles = {
+  input: (nodeId: string) => createHandleId(nodeId, "workflow-input"),
+  output: (nodeId: string) => createHandleId(nodeId, "workflow-output")
+};
+
+/**
  * 通用节点 Handle ID（兜底）
  */
 export const CommonHandles = {
@@ -227,6 +235,12 @@ export function getHandleTypeFromId(handleId?: string | null): HandleType {
     case "llm-output":
       return HandleType.LLM_CALLER_OUTPUT;
 
+    // 工作流节点
+    case "workflow-input":
+      return HandleType.WORKFLOW_INPUT;
+    case "workflow-output":
+      return HandleType.WORKFLOW_OUTPUT;
+
     // 通用类型
     case "common-input":
       return HandleType.COMMON_INPUT;
@@ -256,7 +270,8 @@ export function isInputHandle(handleId: string): boolean {
     HandleType.DATA_PROCESSOR_INPUT,
     HandleType.LOOP_INPUT,
     HandleType.LOOP_FEEDBACK_INPUT,
-    HandleType.LLM_CALLER_INPUT
+    HandleType.LLM_CALLER_INPUT,
+    HandleType.WORKFLOW_INPUT
   ];
 
   return inputTypes.includes(handleType);

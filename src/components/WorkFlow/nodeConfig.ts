@@ -9,7 +9,8 @@ import {
   ApiCallerNode,
   DataProcessorNode,
   WhileLoopNode,
-  LlmCallerNode
+  LlmCallerNode,
+  WorkflowNode
 } from ".";
 
 // 节点类型注册
@@ -22,7 +23,8 @@ export const nodeTypes = {
   [NodeTypeEnum.API_CALLER]: markRaw(ApiCallerNode),
   [NodeTypeEnum.DATA_PROCESSOR]: markRaw(DataProcessorNode),
   [NodeTypeEnum.WHILE_LOOP]: markRaw(WhileLoopNode),
-  [NodeTypeEnum.LLM_CALLER]: markRaw(LlmCallerNode)
+  [NodeTypeEnum.LLM_CALLER]: markRaw(LlmCallerNode),
+  [NodeTypeEnum.WORKFLOW]: markRaw(WorkflowNode)
 };
 
 /**
@@ -153,6 +155,19 @@ export const nodeTemplates: NodeTemplate[] = [
         model: "gpt-3.5-turbo",
         temperature: 0.7
       }
+    }
+  },
+  {
+    type: NodeTypeEnum.WORKFLOW,
+    label: "工作流",
+    icon: "🔗",
+    description: "引用第三方工作流应用",
+    defaultData: {
+      label: "工作流",
+      description: "",
+      color: "#667eea",
+      config: {},
+      workflowApplicationId: ""
     }
   }
 ];
