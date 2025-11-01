@@ -2,6 +2,10 @@ import { computed, type Ref } from "vue";
 import type { Node } from "@vue-flow/core";
 import { useVueFlow } from "@vue-flow/core";
 import type { BranchConfig, ParallelChildConfig, NodeData } from "../types";
+import {
+  ConditionHandles,
+  ParallelHandles
+} from "@/composables/workflowApplication/handleIdUtils";
 
 /**
  * 节点操作 Hook
@@ -117,8 +121,11 @@ export function useNodeOperations(
     const edges = getEdges.value;
 
     return Object.values(branchNodes).map((branchConfig: any) => {
-      // 构建完整的 sourceHandle ID（格式：nodeId-branch-branchName）
-      const expectedSourceHandle = `${node.id}-branch-${branchConfig.name}`;
+      // 使用新的 Handle ID 格式：nodeId:branch:branchName
+      const expectedSourceHandle = ConditionHandles.branch(
+        node.id,
+        branchConfig.name
+      );
 
       // 查找对应的 edge（精确匹配 sourceHandle）
       const edge = edges.find(
@@ -147,8 +154,8 @@ export function useNodeOperations(
     const edges = getEdges.value;
 
     return threads.map((thread: any) => {
-      // 构建完整的 sourceHandle ID（格式：nodeId-parallel-threadId）
-      const expectedSourceHandle = `${node.id}-parallel-${thread.id}`;
+      // 使用新的 Handle ID 格式：nodeId:thread:threadId
+      const expectedSourceHandle = ParallelHandles.thread(node.id, thread.id);
 
       // 查找对应的 edge（精确匹配 sourceHandle）
       const edge = edges.find(

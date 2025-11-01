@@ -78,7 +78,6 @@ export interface ParallelChildConfig {
  */
 export interface NodeData {
   label: string; // 节点名称
-  nodeKey?: string; // 节点唯一标识符
   description?: string; // 节点描述
   prompt?: string; // 提示词（LLM节点）
   config?: Record<string, any>; // 节点配置

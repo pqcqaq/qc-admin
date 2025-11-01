@@ -1,6 +1,7 @@
 <template>
   <div class="llm-caller-node">
     <Handle
+      :id="LlmCallerHandles.input(id)"
       type="target"
       :position="Position.Top"
       class="node-handle target-handle"
@@ -32,6 +33,7 @@
     </div>
 
     <Handle
+      :id="LlmCallerHandles.output(id)"
       type="source"
       :position="Position.Bottom"
       class="node-handle source-handle"
@@ -43,8 +45,10 @@
 import { computed } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import type { NodeProps } from "@vue-flow/core";
+import { LlmCallerHandles } from "@/composables/workflowApplication/handleIdUtils";
 
 interface Props extends NodeProps {
+  id: string;
   selected: boolean;
 }
 

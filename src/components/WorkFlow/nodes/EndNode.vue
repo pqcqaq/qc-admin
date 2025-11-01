@@ -1,7 +1,7 @@
 <template>
   <div class="end-node">
     <Handle
-      :id="`${id}-top`"
+      :id="EndNodeHandles.input(id)"
       type="target"
       :position="Position.Top"
       class="node-handle target-handle"
@@ -19,6 +19,7 @@
 <script setup lang="ts">
 import { Handle, Position } from "@vue-flow/core";
 import type { NodeData } from "../types";
+import { EndNodeHandles } from "@/composables/workflowApplication/handleIdUtils";
 
 interface Props {
   id: string;

@@ -8,7 +8,7 @@
       <span class="node-label">{{ data.label }}</span>
     </div>
     <Handle
-      :id="`${id}-bottom`"
+      :id="StartNodeHandles.output(id)"
       type="source"
       :position="Position.Bottom"
       class="node-handle source-handle"
@@ -19,6 +19,7 @@
 <script setup lang="ts">
 import { Handle, Position } from "@vue-flow/core";
 import type { NodeData } from "../types";
+import { StartNodeHandles } from "@/composables/workflowApplication/handleIdUtils";
 
 interface Props {
   id: string;

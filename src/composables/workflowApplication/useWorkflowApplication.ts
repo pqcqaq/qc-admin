@@ -23,13 +23,8 @@ import {
   deleteWorkflowApplication,
   cloneWorkflowApplication,
   getWorkflowNodesByApplicationId,
-  createWorkflowNode,
-  updateWorkflowNode,
-  deleteWorkflowNode,
   getWorkflowEdgesByApplicationId,
-  createWorkflowEdge,
-  updateWorkflowEdge,
-  deleteWorkflowEdge
+  batchSaveWorkflow
 } from "qc-admin-api-common/workflow";
 import type {
   WorkflowApplicationResponse,
@@ -38,7 +33,11 @@ import type {
   WorkflowNodeResponse,
   WorkflowEdgeResponse
 } from "qc-admin-api-common/workflow";
-import { useWorkflow } from "../workflow/useWorkflow";
+import {
+  useWorkflow,
+  type EdgeAddContext,
+  type EdgeDeleteContext
+} from "../workflow/useWorkflow";
 import { NodeTypeEnum } from "@/components/WorkFlow/types";
 import {
   calculateBranchNodesFromNode,
@@ -49,6 +48,7 @@ import {
   getNodeHash,
   type Snapshot
 } from "./diff";
+import { validateEdgeConnection, validateEdgeDeletion } from "./edgeValidation";
 
 const threshold = 0.1;
 
@@ -118,46 +118,93 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
   // 使用 workflow composable
   const workflow = useWorkflow({
     vueFlowId,
+
+    // 边添加前的验证回调
+    beforeAddEdge: async (context: EdgeAddContext) => {
+      const result = validateEdgeConnection(
+        context.connection,
+        context.sourceNode,
+        context.targetNode,
+        context.allEdges
+      );
+      return result;
+    },
+
+    // 边删除前的验证回调
+    beforeDeleteEdge: async (context: EdgeDeleteContext) => {
+      // 获取要删除的边
+      const edgesToDelete = context.edgesToDelete;
+
+      // 对每条边进行验证
+      for (const edge of edgesToDelete) {
+        const sourceNode = workflow.getNodeById(edge.source);
+        const targetNode = workflow.getNodeById(edge.target);
+
+        const result = validateEdgeDeletion(edge, sourceNode, targetNode);
+        if (!result.success) {
+          return result;
+        }
+      }
+
+      return { success: true };
+    },
+
     // 节点加载完成后的回调
     onNodesLoaded: async () => {
       if (pendingViewportConfig) {
         debugLog(
           "应用加载",
-          "节点加载完成，恢复视口配置...",
+          "节点加载完成，准备恢复视口配置...",
           pendingViewportConfig
         );
 
-        const beforeViewport = workflow.getViewport();
-        debugLog("应用加载", "设置前的视口状态", beforeViewport);
-
-        workflow.setTransform({
-          x: pendingViewportConfig.x,
-          y: pendingViewportConfig.y,
-          zoom: pendingViewportConfig.zoom
-        });
-
-        // 等待一帧确保 setTransform 生效
-        await nextTick();
-
-        const afterViewport = workflow.getViewport();
-        debugLog("应用加载", "设置后的视口状态", afterViewport);
-        debugLog("应用加载", "✅ 视口配置已恢复");
-
-        // 保存初始视口状态
-        snapshot.value.viewport = workflow.getViewport();
-        debugLog("应用加载", "✅ 保存初始视口状态", snapshot.value.viewport);
+        // 保存配置到临时变量
+        const targetViewport = { ...pendingViewportConfig };
 
         // 清除待恢复的配置
         pendingViewportConfig = null;
+
+        // 使用 requestAnimationFrame 确保 DOM 已渲染
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const beforeViewport = workflow.getViewport();
+            debugLog("应用加载", "设置前的视口状态", beforeViewport);
+
+            // 使用 setViewport 而不是已废弃的 setTransform
+            workflow.setViewport(targetViewport);
+
+            // 使用 nextTick 等待 Vue 更新
+            nextTick(() => {
+              const afterViewport = workflow.getViewport();
+              debugLog("应用加载", "设置后的视口状态", afterViewport);
+              debugLog("应用加载", "✅ 视口配置已恢复");
+
+              // 保存初始视口状态
+              snapshot.value.viewport = afterViewport;
+              debugLog(
+                "应用加载",
+                "✅ 保存初始视口状态",
+                snapshot.value.viewport
+              );
+            });
+          });
+        });
       } else {
         // 如果没有待恢复的视口配置，自动适应画布
-        workflow.fitView({ padding: 0.2, duration: 300 });
-        debugLog("应用加载", "✅ 自动适应画布");
+        requestAnimationFrame(() => {
+          workflow.fitView({ padding: 0.2, duration: 300 });
+          debugLog("应用加载", "✅ 自动适应画布");
 
-        // 保存初始视口状态
-        await nextTick();
-        snapshot.value.viewport = workflow.getViewport();
-        debugLog("应用加载", "✅ 保存初始视口状态", snapshot.value.viewport);
+          // 保存初始视口状态
+          nextTick(() => {
+            snapshot.value.viewport = workflow.getViewport();
+            debugLog(
+              "应用加载",
+              "✅ 保存初始视口状态",
+              snapshot.value.viewport
+            );
+          });
+        });
       }
     }
   });
@@ -470,7 +517,7 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
   };
 
   /**
-   * 保存当前工作流（核心方法 - 使用 Node 和 Edge API）
+   * 保存当前工作流（核心方法 - 使用批量保存 API）
    */
   const saveWorkflow = async () => {
     if (!currentApplication.value) {
@@ -485,8 +532,6 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
 
     try {
       saving.value = true;
-      const applicationId = currentApplication.value.id;
-
       // 获取当前所有节点和边
       const currentNodes = workflow.getAllNodes();
       const currentEdges = workflow.getAllEdges();
@@ -496,7 +541,7 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
         `当前画布状态: ${currentNodes.length} 个节点, ${currentEdges.length} 条边`
       );
 
-      // Diff 节点：找出新增、修改、删除的节点
+      // ========== 第一步：Diff 节点 ==========
       debugLog("工作流保存", "开始 diff 节点...");
       const currentNodeMap = new Map(currentNodes.map(n => [n.id, n]));
       const nodesToCreate: Node[] = [];
@@ -555,156 +600,7 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
         `节点 diff 结果: 新增 ${nodesToCreate.length}, 修改 ${nodesToUpdate.length}, 删除 ${nodeIdsToDelete.length}`
       );
 
-      // 创建新节点（第一阶段：不包含 branchNodes）
-      const nodeIdMapping = new Map<string, string>(); // 临时 ID -> 数据库 ID
-      for (const node of nodesToCreate) {
-        const nodeData = {
-          name: node.data.label || node.id,
-          nodeKey: node.id,
-          type: node.type as any,
-          description: node.data.description || "",
-          config: node.data.config || {},
-          applicationId,
-          positionX: node.position.x,
-          positionY: node.position.y,
-          prompt: node.data.prompt,
-          processorLanguage: node.data.processorLanguage,
-          processorCode: node.data.processorCode,
-          apiConfig: node.data.apiConfig,
-          parallelConfig: node.data.parallelConfig,
-          // 注意：branchNodes 将在所有节点创建完成后更新
-          // 注意：不保存 parallelChildren，关系通过 parent_node_id 管理
-          async: node.data.async,
-          timeout: node.data.timeout,
-          retryCount: node.data.retryCount,
-          color: node.data.color
-        };
-
-        const result = await createWorkflowNode(nodeData);
-        if (result.success) {
-          nodeIdMapping.set(node.id, result.data.id);
-          stats.nodesCreated++;
-          debugLog(
-            "工作流保存",
-            `✅ 创建节点: ${node.id} -> ${result.data.id}`
-          );
-        }
-      }
-
-      // 更新修改的节点
-      for (const node of nodesToUpdate) {
-        const snapshotNode = snapshot.value.nodes.get(node.id);
-
-        // 计算字段级别的变化（用于日志记录和优化）
-        let changedFieldsList: string[] = [];
-        if (snapshotNode) {
-          const fieldChangesInfo = getNodeFieldChanges(
-            currentEdges,
-            node,
-            snapshotNode
-          );
-          if (fieldChangesInfo) {
-            changedFieldsList = fieldChangesInfo.changedFields;
-            stats.totalFieldsChanged += changedFieldsList.length;
-            debugLog(
-              "工作流保存",
-              `节点 ${node.id} 的变更字段: ${changedFieldsList.join(", ")}`
-            );
-          }
-        }
-
-        // 构建更新数据：只包含变更的字段
-        const nodeData: any = {
-          applicationId // 应用 ID（前端需要，但后端不需要）
-        };
-
-        // 只添加变更的字段
-        if (changedFieldsList.includes("data.label")) {
-          nodeData.name = node.data.label || node.id;
-        }
-
-        if (changedFieldsList.includes("position")) {
-          nodeData.positionX = node.position.x;
-          nodeData.positionY = node.position.y;
-        }
-
-        if (changedFieldsList.includes("data.description")) {
-          nodeData.description = node.data.description || "";
-        }
-
-        if (changedFieldsList.includes("data.config")) {
-          nodeData.config = node.data.config || {};
-        }
-
-        if (changedFieldsList.includes("data.prompt")) {
-          nodeData.prompt = node.data.prompt;
-        }
-
-        if (changedFieldsList.includes("data.processorLanguage")) {
-          nodeData.processorLanguage = node.data.processorLanguage;
-        }
-
-        if (changedFieldsList.includes("data.processorCode")) {
-          nodeData.processorCode = node.data.processorCode;
-        }
-
-        if (changedFieldsList.includes("data.apiConfig")) {
-          nodeData.apiConfig = node.data.apiConfig;
-        }
-
-        if (changedFieldsList.includes("data.parallelConfig")) {
-          nodeData.parallelConfig = node.data.parallelConfig;
-        }
-
-        if (changedFieldsList.includes("data.async")) {
-          nodeData.async = node.data.async;
-        }
-
-        if (changedFieldsList.includes("data.timeout")) {
-          nodeData.timeout = node.data.timeout;
-        }
-
-        if (changedFieldsList.includes("data.retryCount")) {
-          nodeData.retryCount = node.data.retryCount;
-        }
-
-        if (changedFieldsList.includes("data.color")) {
-          nodeData.color = node.data.color;
-        }
-
-        // 对于条件节点，检查 branchNodes 是否变更
-        if (node.type === NodeTypeEnum.CONDITION_CHECKER) {
-          const branchNodes = calculateBranchNodesFromNode(
-            currentEdges,
-            node,
-            nodeIdMapping
-          );
-          if (branchNodes && Object.keys(branchNodes).length > 0) {
-            // 如果 branchNodes 有变化，或者是为了保持一致性，总是包含它
-            if (
-              changedFieldsList.includes("data.branchNodes") ||
-              changedFieldsList.length > 0
-            ) {
-              nodeData.branchNodes = branchNodes;
-            }
-          }
-        }
-
-        await updateWorkflowNode(node.id, nodeData);
-        stats.nodesUpdated++;
-        debugLog("工作流保存", `✅ 更新节点: ${node.id}`);
-      }
-
-      // 删除节点
-      for (const nodeId of nodeIdsToDelete) {
-        await deleteWorkflowNode(nodeId);
-        stats.nodesDeleted++;
-        debugLog("工作流保存", `✅ 删除节点: ${nodeId}`);
-      }
-
-      debugLog("工作流保存", `✅ 节点保存完成`);
-
-      // Diff 边：找出新增、修改、删除的边
+      // ========== 第二步：Diff 边 ==========
       debugLog("工作流保存", "开始 diff 边...");
       const currentEdgeMap = new Map(currentEdges.map(e => [e.id, e]));
       const edgesToCreate: Edge[] = [];
@@ -752,8 +648,161 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
         `边 diff 结果: 新增 ${edgesToCreate.length}, 修改 ${edgesToUpdate.length}, 删除 ${edgeIdsToDelete.length}`
       );
 
-      // 创建新边
-      for (const edge of edgesToCreate) {
+      // ========== 第三步：准备批量保存数据 ==========
+      debugLog("工作流保存", "准备批量保存数据...");
+
+      // 准备要创建的节点数据
+      const nodesToCreateData = nodesToCreate.map(node => {
+        const nodeData: any = {
+          name: node.data.label || node.id,
+          type: node.type as any,
+          description: node.data.description || "",
+          config: node.data.config || {},
+          applicationId: currentApplication.value.id,
+          positionX: node.position.x,
+          positionY: node.position.y,
+          prompt: node.data.prompt,
+          processorLanguage: node.data.processorLanguage,
+          processorCode: node.data.processorCode,
+          apiConfig: node.data.apiConfig,
+          parallelConfig: node.data.parallelConfig,
+          async: node.data.async,
+          timeout: node.data.timeout,
+          retryCount: node.data.retryCount,
+          color: node.data.color
+        };
+
+        // 对于条件节点，计算并添加 branchNodes
+        if (node.type === NodeTypeEnum.CONDITION_CHECKER) {
+          const branchNodes = calculateBranchNodesFromNode(currentEdges, node);
+          if (branchNodes && Object.keys(branchNodes).length > 0) {
+            nodeData.branchNodes = branchNodes;
+          }
+        }
+
+        return nodeData;
+      });
+
+      // 准备要更新的节点数据
+      const nodesToUpdateData = nodesToUpdate.map(node => {
+        const snapshotNode = snapshot.value.nodes.get(node.id);
+        const nodeData: any = {};
+
+        // 计算字段级别的变化
+        if (snapshotNode) {
+          const fieldChangesInfo = getNodeFieldChanges(
+            currentEdges,
+            node,
+            snapshotNode
+          );
+          if (fieldChangesInfo) {
+            const changedFieldsList = fieldChangesInfo.changedFields;
+            stats.totalFieldsChanged += changedFieldsList.length;
+            debugLog(
+              "工作流保存",
+              `节点 ${node.id} 的变更字段: ${changedFieldsList.join(", ")}`
+            );
+
+            // 字段映射表：前端字段路径 -> 后端字段名 + 取值函数
+            const fieldMapping: Record<
+              string,
+              { key: string; getValue: () => any }
+            > = {
+              "data.label": {
+                key: "name",
+                getValue: () => node.data.label || node.id
+              },
+              position: {
+                key: "position",
+                getValue: () => ({
+                  positionX: node.position.x,
+                  positionY: node.position.y
+                })
+              },
+              "data.description": {
+                key: "description",
+                getValue: () => node.data.description || ""
+              },
+              "data.config": {
+                key: "config",
+                getValue: () => node.data.config || {}
+              },
+              "data.prompt": {
+                key: "prompt",
+                getValue: () => node.data.prompt
+              },
+              "data.processorLanguage": {
+                key: "processorLanguage",
+                getValue: () => node.data.processorLanguage
+              },
+              "data.processorCode": {
+                key: "processorCode",
+                getValue: () => node.data.processorCode
+              },
+              "data.apiConfig": {
+                key: "apiConfig",
+                getValue: () => node.data.apiConfig
+              },
+              "data.parallelConfig": {
+                key: "parallelConfig",
+                getValue: () => node.data.parallelConfig
+              },
+              "data.async": {
+                key: "async",
+                getValue: () => node.data.async
+              },
+              "data.timeout": {
+                key: "timeout",
+                getValue: () => node.data.timeout
+              },
+              "data.retryCount": {
+                key: "retryCount",
+                getValue: () => node.data.retryCount
+              },
+              "data.color": {
+                key: "color",
+                getValue: () => node.data.color
+              }
+            };
+
+            // 根据变更字段动态添加数据
+            changedFieldsList.forEach(field => {
+              const mapping = fieldMapping[field];
+              if (mapping) {
+                const value = mapping.getValue();
+                // 特殊处理 position（需要展开为 positionX 和 positionY）
+                if (mapping.key === "position") {
+                  Object.assign(nodeData, value);
+                } else {
+                  nodeData[mapping.key] = value;
+                }
+              }
+            });
+
+            // 对于条件节点，检查 branchNodes 是否变更
+            if (node.type === NodeTypeEnum.CONDITION_CHECKER) {
+              const branchNodes = calculateBranchNodesFromNode(
+                currentEdges,
+                node
+              );
+              if (branchNodes && Object.keys(branchNodes).length > 0) {
+                if (
+                  changedFieldsList.includes("data.branchNodes") ||
+                  changedFieldsList.length > 0
+                ) {
+                  nodeData.branchNodes = branchNodes;
+                }
+              }
+            }
+          }
+        }
+
+        return { id: node.id, data: nodeData };
+      });
+
+      // 准备要创建的边数据
+      // 注意：边可以引用临时ID的节点，后端会在创建节点后自动映射ID
+      const edgesToCreateData = edgesToCreate.map(edge => {
         // 将 Vue Flow 的边类型映射到后端业务类型
         let backendType: "default" | "branch" | "parallel" = "default";
         if (edge.data?.isParallelChild) {
@@ -762,15 +811,10 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
           backendType = "branch";
         }
 
-        // 如果 source 或 target 是新创建的节点，需要映射到数据库 ID
-        const sourceId = nodeIdMapping.get(edge.source) || edge.source;
-        const targetId = nodeIdMapping.get(edge.target) || edge.target;
-
-        const edgeData = {
-          edgeKey: edge.id,
-          applicationId,
-          source: sourceId,
-          target: targetId,
+        return {
+          applicationId: currentApplication.value.id,
+          source: edge.source,
+          target: edge.target,
           sourceHandle: edge.sourceHandle,
           targetHandle: edge.targetHandle,
           type: backendType,
@@ -783,134 +827,109 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
             vueFlowType: edge.type
           }
         };
+      });
 
-        const result = await createWorkflowEdge(edgeData);
-        if (result.success) {
-          stats.edgesCreated++;
-          debugLog("工作流保存", `✅ 创建边: ${edge.id} -> ${result.data.id}`);
+      // 准备要更新的边数据
+      const edgesToUpdateData = edgesToUpdate
+        .map(edge => {
+          const snapshotEdge = snapshot.value.edges.get(edge.id);
+          if (!snapshotEdge) {
+            return null;
+          }
 
-          // 更新边ID（将临时ID替换为数据库ID）
-          workflow.updateEdgeId(edge.id, result.data.id);
+          const fieldChangesInfo = getEdgeFieldChanges(edge, snapshotEdge);
+          if (!fieldChangesInfo) {
+            return null;
+          }
+
+          stats.totalFieldsChanged += fieldChangesInfo.changedFields.length;
           debugLog(
             "工作流保存",
-            `✅ 更新边 ID: ${edge.id} -> ${result.data.id}`
+            `边 ${edge.id} 的变更字段: ${fieldChangesInfo.changedFields.join(", ")}`
           );
-        }
-      }
 
-      // 更新修改的边（只提交变更的字段）
-      for (const edge of edgesToUpdate) {
-        const snapshotEdge = snapshot.value.edges.get(edge.id);
-        if (!snapshotEdge) {
-          debugLog(
-            "工作流保存",
-            `⚠️ 边 ${edge.id} 在 snapshot 中不存在，跳过更新`
-          );
-          continue;
-        }
+          return { id: edge.id, data: fieldChangesInfo.changes };
+        })
+        .filter(item => item !== null) as Array<{
+        id: string;
+        data: any;
+      }>;
 
-        // 计算字段级别的变化
-        const fieldChangesInfo = getEdgeFieldChanges(edge, snapshotEdge);
-        if (!fieldChangesInfo) {
-          debugLog("工作流保存", `⚠️ 边 ${edge.id} 没有实际变化，跳过更新`);
-          continue;
-        }
-
-        stats.totalFieldsChanged += fieldChangesInfo.changedFields.length;
-        debugLog(
-          "工作流保存",
-          `边 ${edge.id} 的变更字段: ${fieldChangesInfo.changedFields.join(", ")}`
-        );
-
-        // 只提交变更的字段
-        await updateWorkflowEdge(edge.id, fieldChangesInfo.changes);
-        stats.edgesUpdated++;
-        debugLog("工作流保存", `✅ 更新边: ${edge.id}`);
-      }
-
-      // 删除边
-      for (const edgeId of edgeIdsToDelete) {
-        await deleteWorkflowEdge(edgeId);
-        stats.edgesDeleted++;
-        debugLog("工作流保存", `✅ 删除边: ${edgeId}`);
-      }
-
-      debugLog("工作流保存", `✅ 边保存完成`);
-
-      // 更新新创建的条件节点的 branchNodes（在所有节点和边都保存完成后）
-      // 注意：已存在的条件节点在第一次更新时已经包含了 branchNodes，不需要再次更新
-      debugLog("工作流保存", "开始更新新创建的条件节点的 branchNodes...");
-      const newConditionNodes = nodesToCreate.filter(
-        n => n.type === NodeTypeEnum.CONDITION_CHECKER
+      debugLog("工作流保存", "批量保存数据准备完成");
+      debugLog(
+        "工作流保存",
+        `准备创建 ${nodesToCreateData.length} 个节点, 更新 ${nodesToUpdateData.length} 个节点, 删除 ${nodeIdsToDelete.length} 个节点`
+      );
+      debugLog(
+        "工作流保存",
+        `准备创建 ${edgesToCreateData.length} 条边, 更新 ${edgesToUpdateData.length} 条边, 删除 ${edgeIdsToDelete.length} 条边`
       );
 
-      if (newConditionNodes.length > 0) {
-        for (const node of newConditionNodes) {
-          // 获取节点的数据库 ID（从映射表中获取）
-          const actualNodeId = nodeIdMapping.get(node.id);
-          if (!actualNodeId) {
-            debugLog(
-              "工作流保存",
-              `⚠️ 节点 ${node.id} 没有找到数据库 ID，跳过 branchNodes 更新`
-            );
-            continue;
-          }
+      // 检查是否有任何变更
+      const hasChanges =
+        nodesToCreateData.length > 0 ||
+        nodesToUpdateData.length > 0 ||
+        nodeIdsToDelete.length > 0 ||
+        edgesToCreateData.length > 0 ||
+        edgesToUpdateData.length > 0 ||
+        edgeIdsToDelete.length > 0;
 
-          // 从 node.data.branches 和 edges 计算完整的 branchNodes 配置
-          const branchNodes = calculateBranchNodesFromNode(
-            currentEdges,
-            node,
-            nodeIdMapping
-          );
-
-          if (branchNodes && Object.keys(branchNodes).length > 0) {
-            // 更新节点的 branchNodes 字段
-            const nodeData = {
-              name: node.data.label || node.id,
-              nodeKey: node.id,
-              type: node.type as any,
-              description: node.data.description || "",
-              config: node.data.config || {},
-              applicationId,
-              positionX: node.position.x,
-              positionY: node.position.y,
-              prompt: node.data.prompt,
-              processorLanguage: node.data.processorLanguage,
-              processorCode: node.data.processorCode,
-              apiConfig: node.data.apiConfig,
-              parallelConfig: node.data.parallelConfig,
-              branchNodes, // 更新 branchNodes（完整配置）
-              async: node.data.async,
-              timeout: node.data.timeout,
-              retryCount: node.data.retryCount,
-              color: node.data.color
-            };
-
-            await updateWorkflowNode(actualNodeId, nodeData);
-            debugLog(
-              "工作流保存",
-              `✅ 更新新创建的条件节点 ${node.id} (数据库ID: ${actualNodeId}) 的 branchNodes:`,
-              branchNodes
-            );
-          }
-        }
-        debugLog("工作流保存", `✅ branchNodes 更新完成`);
-      } else {
-        debugLog("工作流保存", `没有新创建的条件节点需要更新 branchNodes`);
+      if (!hasChanges) {
+        debugLog("工作流保存", "⚠️ 没有任何变更，跳过保存");
+        ElMessage.info("工作流没有变更");
+        saving.value = false;
+        return true;
       }
 
-      // 更新 Vue Flow 中的节点和边 ID（将临时 ID 替换为数据库 ID）
-      if (nodeIdMapping.size > 0) {
-        debugLog("工作流保存", "开始更新节点和边的 ID...");
+      // ========== 第四步：调用批量保存 API ==========
+      debugLog("工作流保存", "调用批量保存 API...");
 
-        // 使用 updateNodeId 方法更新节点 ID（会自动更新相关的边）
-        for (const [tempId, dbId] of nodeIdMapping) {
-          workflow.updateNodeId(tempId, dbId);
-          debugLog("工作流保存", `✅ 更新节点 ID: ${tempId} -> ${dbId}`);
-        }
+      const result = await batchSaveWorkflow({
+        applicationId: currentApplication.value.id,
+        nodeTempIds: nodesToCreate.map(n => n.id), // 发送临时ID列表
+        edgeTempIds: edgesToCreate.map(e => e.id), // 发送临时ID列表
+        nodesToCreate: nodesToCreateData,
+        nodesToUpdate: nodesToUpdateData,
+        nodeIdsToDelete,
+        edgesToCreate: edgesToCreateData,
+        edgesToUpdate: edgesToUpdateData,
+        edgeIdsToDelete
+      });
 
-        debugLog("工作流保存", `✅ ID 更新完成`);
+      if (!result.success) {
+        throw new Error(result.message || "批量保存失败");
       }
+
+      debugLog("工作流保存", "✅ 批量保存成功");
+      debugLog("工作流保存", "后端返回统计:", result.data.stats);
+
+      // ========== 第五步：使用ID映射更新前端节点和边的ID ==========
+      debugLog("工作流保存", "使用ID映射更新前端节点和边的ID...");
+
+      // 更新节点ID（使用后端返回的映射表）
+      const nodeIdMapping = result.data.nodeIdMapping || {};
+      for (const [tempId, dbId] of Object.entries(nodeIdMapping)) {
+        workflow.updateNodeId(tempId, dbId as string);
+        debugLog("工作流保存", `✅ 更新节点 ID: ${tempId} -> ${dbId}`);
+      }
+
+      // 等待节点ID更新完成
+      await nextTick();
+
+      // 更新边ID（使用后端返回的映射表）
+      const edgeIdMapping = result.data.edgeIdMapping || {};
+      for (const [tempId, dbId] of Object.entries(edgeIdMapping)) {
+        workflow.updateEdgeId(tempId, dbId as string);
+        debugLog("工作流保存", `✅ 更新边 ID: ${tempId} -> ${dbId}`);
+      }
+
+      // 更新统计信息
+      stats.nodesCreated = result.data.stats.nodesCreated;
+      stats.nodesUpdated = result.data.stats.nodesUpdated;
+      stats.nodesDeleted = result.data.stats.nodesDeleted;
+      stats.edgesCreated = result.data.stats.edgesCreated;
+      stats.edgesUpdated = result.data.stats.edgesUpdated;
+      stats.edgesDeleted = result.data.stats.edgesDeleted;
 
       debugLog("工作流保存", "✅ 保存成功");
 

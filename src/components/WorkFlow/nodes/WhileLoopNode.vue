@@ -1,6 +1,11 @@
 <template>
   <div class="while-loop-node" :class="{ selected: selected }">
-    <Handle type="target" :position="Position.Top" />
+    <!-- 循环输入 -->
+    <Handle
+      :id="LoopHandles.input(id)"
+      type="target"
+      :position="Position.Top"
+    />
 
     <div class="node-header">
       <div class="node-icon">🔄</div>
@@ -21,10 +26,25 @@
       </div>
     </div>
 
-    <Handle type="source" :position="Position.Bottom" />
+    <!-- 循环体输出（进入循环） -->
     <Handle
-      id="loop-back"
+      :id="LoopHandles.body(id)"
       type="source"
+      :position="Position.Bottom"
+    />
+
+    <!-- 循环继续输出（循环结束后） -->
+    <Handle
+      :id="LoopHandles.continue(id)"
+      type="source"
+      :position="Position.Right"
+      style="top: 50%"
+    />
+
+    <!-- 循环反馈输入（循环体回到循环节点） -->
+    <Handle
+      :id="LoopHandles.feedback(id)"
+      type="target"
       :position="Position.Left"
       style="top: 50%"
     />
@@ -34,8 +54,10 @@
 <script setup lang="ts">
 import { Handle, Position } from "@vue-flow/core";
 import type { NodeProps } from "@vue-flow/core";
+import { LoopHandles } from "@/composables/workflowApplication/handleIdUtils";
 
 interface Props extends NodeProps {
+  id: string;
   selected: boolean;
 }
 

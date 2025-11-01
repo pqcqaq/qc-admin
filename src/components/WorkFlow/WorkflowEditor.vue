@@ -273,172 +273,172 @@ function onCanvasMouseUp() {
  * 连接事件处理
  */
 async function onConnect(params: Connection) {
-  console.log("[onConnect] 创建连接:", params);
+  // console.log("[onConnect] 创建连接:", params);
 
-  const sourceNode = props.workflow
-    ?.getAllNodes()
-    .find(n => n.id === params.source);
-  const targetNode = props.workflow
-    ?.getAllNodes()
-    .find(n => n.id === params.target);
+  // const sourceNode = props.workflow
+  //   ?.getAllNodes()
+  //   .find(n => n.id === params.source);
+  // const targetNode = props.workflow
+  //   ?.getAllNodes()
+  //   .find(n => n.id === params.target);
 
-  if (!sourceNode) {
-    ElMessage.error("源节点不存在");
-    return;
-  }
+  // if (!sourceNode) {
+  //   ElMessage.error("源节点不存在");
+  //   return;
+  // }
 
-  if (!targetNode) {
-    ElMessage.error("目标节点不存在");
-    return;
-  }
+  // if (!targetNode) {
+  //   ElMessage.error("目标节点不存在");
+  //   return;
+  // }
 
-  // 验证连接规则
-  if (params.source === params.target) {
-    ElMessage.warning("不能连接到自己");
-    return;
-  }
+  // // 验证连接规则
+  // if (params.source === params.target) {
+  //   ElMessage.warning("不能连接到自己");
+  //   return;
+  // }
 
-  const sourceRule = getNodeConnectionRule(sourceNode.type);
-  const targetRule = getNodeConnectionRule(targetNode.type);
+  // const sourceRule = getNodeConnectionRule(sourceNode.type);
+  // const targetRule = getNodeConnectionRule(targetNode.type);
 
-  if (sourceRule.maxOutputConnections === 0) {
-    ElMessage.warning("该节点不能连接到其他节点");
-    return;
-  }
+  // if (sourceRule.maxOutputConnections === 0) {
+  //   ElMessage.warning("该节点不能连接到其他节点");
+  //   return;
+  // }
 
-  if (targetNode.type === "start") {
-    ElMessage.warning("开始节点不能被其他节点连接");
-    return;
-  }
+  // if (targetNode.type === "start") {
+  //   ElMessage.warning("开始节点不能被其他节点连接");
+  //   return;
+  // }
 
-  const existingEdges = props.workflow?.getAllEdges() || [];
-  const duplicateEdge = existingEdges.find(
-    e =>
-      e.source === params.source &&
-      e.target === params.target &&
-      e.sourceHandle === params.sourceHandle
-  );
-  if (duplicateEdge) {
-    ElMessage.warning("该连接已存在");
-    return;
-  }
+  // const existingEdges = props.workflow?.getAllEdges() || [];
+  // const duplicateEdge = existingEdges.find(
+  //   e =>
+  //     e.source === params.source &&
+  //     e.target === params.target &&
+  //     e.sourceHandle === params.sourceHandle
+  // );
+  // if (duplicateEdge) {
+  //   ElMessage.warning("该连接已存在");
+  //   return;
+  // }
 
-  const isBranchConnection = params.sourceHandle?.includes("-branch-");
-  const isParallelChildConnection = params.sourceHandle?.includes("-parallel-");
+  // const isBranchConnection = params.sourceHandle?.includes("-branch-");
+  // const isParallelChildConnection = params.sourceHandle?.includes("-parallel-");
 
-  if (!isBranchConnection && !isParallelChildConnection) {
-    // 普通连接验证
-    if (!sourceRule.canHaveNextNode) {
-      ElMessage.warning(
-        `${sourceNode.data?.label || "该节点"}不能有普通输出连接，请使用分支连接`
-      );
-      return;
-    }
+  // if (!isBranchConnection && !isParallelChildConnection) {
+  //   // 普通连接验证
+  //   if (!sourceRule.canHaveNextNode) {
+  //     ElMessage.warning(
+  //       `${sourceNode.data?.label || "该节点"}不能有普通输出连接，请使用分支连接`
+  //     );
+  //     return;
+  //   }
 
-    const existingNextNodeEdges = existingEdges.filter(
-      e =>
-        e.source === params.source &&
-        !e.sourceHandle?.includes("-branch-") &&
-        !e.sourceHandle?.includes("-parallel-")
-    );
+  //   const existingNextNodeEdges = existingEdges.filter(
+  //     e =>
+  //       e.source === params.source &&
+  //       !e.sourceHandle?.includes("-branch-") &&
+  //       !e.sourceHandle?.includes("-parallel-")
+  //   );
 
-    if (
-      sourceRule.maxOutputConnections === 1 &&
-      existingNextNodeEdges.length > 0
-    ) {
-      ElMessage.warning("该节点已有一个主输出连接，请先断开现有连接");
-      return;
-    }
-  } else if (isBranchConnection) {
-    // 分支连接验证
-    if (!sourceRule.canHaveBranches) {
-      ElMessage.warning(`${sourceNode.data?.label || "该节点"}不支持分支连接`);
-      return;
-    }
+  //   if (
+  //     sourceRule.maxOutputConnections === 1 &&
+  //     existingNextNodeEdges.length > 0
+  //   ) {
+  //     ElMessage.warning("该节点已有一个主输出连接，请先断开现有连接");
+  //     return;
+  //   }
+  // } else if (isBranchConnection) {
+  //   // 分支连接验证
+  //   if (!sourceRule.canHaveBranches) {
+  //     ElMessage.warning(`${sourceNode.data?.label || "该节点"}不支持分支连接`);
+  //     return;
+  //   }
 
-    // 检查目标节点是否可以作为分支的目标
-    if (!targetRule.canBeParallel) {
-      ElMessage.warning(
-        `${targetNode.data?.label || "目标节点"}不能作为分支的目标节点`
-      );
-      return;
-    }
-  } else if (isParallelChildConnection) {
-    // 并行子节点连接验证
-    if (!targetRule.canBeParallel) {
-      ElMessage.warning(
-        `${targetNode.data?.label || "目标节点"}不能作为并行子节点`
-      );
-      return;
-    }
-  }
+  //   // 检查目标节点是否可以作为分支的目标
+  //   if (!targetRule.canBeParallel) {
+  //     ElMessage.warning(
+  //       `${targetNode.data?.label || "目标节点"}不能作为分支的目标节点`
+  //     );
+  //     return;
+  //   }
+  // } else if (isParallelChildConnection) {
+  //   // 并行子节点连接验证
+  //   if (!targetRule.canBeParallel) {
+  //     ElMessage.warning(
+  //       `${targetNode.data?.label || "目标节点"}不能作为并行子节点`
+  //     );
+  //     return;
+  //   }
+  // }
 
-  type EnhancedConnection = Connection & {
-    data: any;
-    type: string;
-    animated: boolean;
-    label: string;
-    style: object;
-  };
+  // type EnhancedConnection = Connection & {
+  //   data: any;
+  //   type: string;
+  //   animated: boolean;
+  //   label: string;
+  //   style: object;
+  // };
 
-  const enhancedParams: EnhancedConnection = {
-    ...params,
-    data: {},
-    type: "smoothstep",
-    animated: false,
-    label: "",
-    style: { strokeWidth: 2 }
-  };
+  // const enhancedParams: EnhancedConnection = {
+  //   ...params,
+  //   data: {},
+  //   type: "smoothstep",
+  //   animated: false,
+  //   label: "",
+  //   style: { strokeWidth: 2 }
+  // };
 
-  // 处理条件节点的分支连接
-  if (
-    sourceNode.type === NodeTypeEnum.CONDITION_CHECKER &&
-    params.sourceHandle
-  ) {
-    // 使用正则提取分支名称（格式：nodeId-branch-branchName）
-    const match = params.sourceHandle.match(/-branch-(.+)$/);
-    if (match) {
-      const branchName = match[1];
-      enhancedParams.type = "smoothstep";
-      enhancedParams.animated = true;
-      enhancedParams.label = branchName;
-      enhancedParams.style = {
-        strokeWidth: 2,
-        stroke: "#E6A23C"
-      };
-      enhancedParams.data = {
-        branchName,
-        label: branchName
-      };
-    }
-  }
+  // // 处理条件节点的分支连接
+  // if (
+  //   sourceNode.type === NodeTypeEnum.CONDITION_CHECKER &&
+  //   params.sourceHandle
+  // ) {
+  //   // 使用正则提取分支名称（格式：nodeId-branch-branchName）
+  //   const match = params.sourceHandle.match(/-branch-(.+)$/);
+  //   if (match) {
+  //     const branchName = match[1];
+  //     enhancedParams.type = "smoothstep";
+  //     enhancedParams.animated = true;
+  //     enhancedParams.label = branchName;
+  //     enhancedParams.style = {
+  //       strokeWidth: 2,
+  //       stroke: "#E6A23C"
+  //     };
+  //     enhancedParams.data = {
+  //       branchName,
+  //       label: branchName
+  //     };
+  //   }
+  // }
 
-  // 处理并行节点的任务连接
-  if (
-    sourceNode.type === NodeTypeEnum.PARALLEL_EXECUTOR &&
-    params.sourceHandle
-  ) {
-    // 使用正则检测并行连接（格式：nodeId-parallel-threadId）
-    const match = params.sourceHandle.match(/-parallel-(.+)$/);
-    if (match) {
-      const threadId = match[1];
-      enhancedParams.type = "smoothstep";
-      enhancedParams.animated = true;
-      enhancedParams.label = "并行";
-      enhancedParams.style = {
-        strokeWidth: 2,
-        stroke: "#909399",
-        strokeDasharray: "5,5"
-      };
-      enhancedParams.data = {
-        isParallelChild: true,
-        threadId, // 保存 thread ID，方便后续使用
-        label: "并行"
-      };
-    }
-  }
+  // // 处理并行节点的任务连接
+  // if (
+  //   sourceNode.type === NodeTypeEnum.PARALLEL_EXECUTOR &&
+  //   params.sourceHandle
+  // ) {
+  //   // 使用新格式检测并行连接（格式：nodeId:thread:threadId）
+  //   const parts = params.sourceHandle.split(":");
+  //   if (parts.length === 3 && parts[1] === "thread") {
+  //     const threadId = parts[2];
+  //     enhancedParams.type = "smoothstep";
+  //     enhancedParams.animated = true;
+  //     enhancedParams.label = "并行";
+  //     enhancedParams.style = {
+  //       strokeWidth: 2,
+  //       stroke: "#909399",
+  //       strokeDasharray: "5,5"
+  //     };
+  //     enhancedParams.data = {
+  //       isParallelChild: true,
+  //       threadId, // 保存 thread ID，方便后续使用
+  //       label: "并行"
+  //     };
+  //   }
+  // }
 
-  await props.workflow?.addEdge(enhancedParams);
+  await props.workflow?.addEdge(params);
 }
 
 /**

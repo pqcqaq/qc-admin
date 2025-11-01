@@ -207,6 +207,7 @@ export function useWorkflow(options: WorkflowOptions = {}) {
     zoomOut,
     zoomTo,
     setTransform,
+    setViewport,
     getViewport,
     screenToFlowCoordinate,
     project
@@ -903,6 +904,7 @@ export function useWorkflow(options: WorkflowOptions = {}) {
     zoomOut,
     zoomTo,
     setTransform,
+    setViewport,
     getViewport,
     screenToFlowCoordinate,
     project,

@@ -2,7 +2,7 @@
   <div class="decision-node" :style="{ backgroundColor: data.color }">
     <!-- 输入连接点（顶部） -->
     <Handle
-      :id="`${id}-input`"
+      :id="ConditionHandles.input(id)"
       type="target"
       :position="Position.Top"
       class="node-handle input-handle"
@@ -21,7 +21,7 @@
     <!-- 动态分支输出连接点 -->
     <Handle
       v-for="(branch, index) in branches"
-      :id="`${id}-branch-${branch.name}`"
+      :id="ConditionHandles.branch(id, branch.name)"
       :key="branch.name"
       type="source"
       :position="getBranchPosition(index)"
@@ -37,6 +37,7 @@
 import { computed } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import type { NodeData, BranchConfig } from "../types";
+import { ConditionHandles } from "@/composables/workflowApplication/handleIdUtils";
 
 interface Props {
   id: string;

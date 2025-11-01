@@ -1,5 +1,6 @@
 import { NodeTypeEnum } from "@/components/WorkFlow/types";
 import type { Node, Edge } from "@vue-flow/core";
+import { ConditionHandles } from "./handleIdUtils";
 
 export type Snapshot = {
   nodes: Map<string, Node>;
@@ -24,12 +25,10 @@ const hashString = (str: string): string => {
  * 从 node.data.branchNodes 和 edges 计算完整的 branchNodes（包含 targetNodeId）
  * 用于条件节点（condition_checker）
  * @param node 节点对象
- * @param nodeIdMapping 节点ID映射表（临时ID -> 数据库ID）
  */
 export const calculateBranchNodesFromNode = (
   edges: Edge[],
-  node: Node,
-  nodeIdMapping?: Map<string, string>
+  node: Node
 ): Record<string, any> | undefined => {
   // 从 node.data.branchNodes 读取分支配置
   const branchNodes = node.data.branchNodes;
@@ -40,21 +39,17 @@ export const calculateBranchNodesFromNode = (
   // 遍历每个分支配置
   Object.entries(branchNodes).forEach(
     ([branchName, branchConfig]: [string, any]) => {
-      // 查找对应的 edge 获取 targetNodeId
-      const expectedSourceHandle = `${node.id}-branch-${branchName}`;
+      // 使用新的 Handle ID 格式：nodeId:branch:branchName
+      const expectedSourceHandle = ConditionHandles.branch(node.id, branchName);
+
       const edge = edges.find(
         e => e.source === node.id && e.sourceHandle === expectedSourceHandle
       );
 
       let targetNodeId: string | undefined;
       if (edge) {
-        // 如果有映射表，使用映射后的ID；否则直接使用target
-        let targetId = edge.target;
-        if (nodeIdMapping && nodeIdMapping.has(edge.target)) {
-          targetId = nodeIdMapping.get(edge.target)!;
-        }
-        // 后端返回的 ID 永远是 string，直接使用
-        targetNodeId = targetId;
+        // 节点创建后已经立即更新了ID，直接使用 edge.target
+        targetNodeId = edge.target;
       }
 
       // 构建完整的分支配置（保留原有配置，更新 targetNodeId）
@@ -221,7 +216,6 @@ export const getEdgeFieldChanges = (
 ): {
   changedFields: string[];
   changes: Partial<{
-    edgeKey: string;
     sourceHandle: string;
     targetHandle: string;
     type: "default" | "branch" | "parallel";
@@ -236,12 +230,7 @@ export const getEdgeFieldChanges = (
   const changedFields: string[] = [];
   let hasChanges = false;
 
-  // 比较各个字段
-  if (currentEdge.id !== snapshotEdge.id) {
-    changes.edgeKey = currentEdge.id;
-    changedFields.push("edgeKey");
-    hasChanges = true;
-  }
+  // 边的 ID 不应该改变，所以不需要比较
 
   if (currentEdge.sourceHandle !== snapshotEdge.sourceHandle) {
     changes.sourceHandle = currentEdge.sourceHandle;

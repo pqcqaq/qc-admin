@@ -1,6 +1,10 @@
 <template>
   <div class="api-caller-node" :class="{ selected: selected }">
-    <Handle type="target" :position="Position.Top" />
+    <Handle
+      :id="ApiCallerHandles.input(id)"
+      type="target"
+      :position="Position.Top"
+    />
 
     <div class="node-header">
       <div class="node-icon">🌐</div>
@@ -21,15 +25,21 @@
       </div>
     </div>
 
-    <Handle type="source" :position="Position.Bottom" />
+    <Handle
+      :id="ApiCallerHandles.output(id)"
+      type="source"
+      :position="Position.Bottom"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { Handle, Position } from "@vue-flow/core";
 import type { NodeProps } from "@vue-flow/core";
+import { ApiCallerHandles } from "@/composables/workflowApplication/handleIdUtils";
 
 interface Props extends NodeProps {
+  id: string;
   selected: boolean;
 }
 

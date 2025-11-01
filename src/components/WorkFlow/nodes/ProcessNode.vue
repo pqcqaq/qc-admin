@@ -1,15 +1,9 @@
 <template>
   <div class="process-node">
     <Handle
-      :id="`${id}-top`"
+      :id="TaskGeneratorHandles.input(id)"
       type="target"
       :position="Position.Top"
-      class="node-handle target-handle"
-    />
-    <Handle
-      :id="`${id}-left`"
-      type="target"
-      :position="Position.Left"
       class="node-handle target-handle"
     />
 
@@ -28,13 +22,7 @@
     </div>
 
     <Handle
-      :id="`${id}-right`"
-      type="source"
-      :position="Position.Right"
-      class="node-handle source-handle"
-    />
-    <Handle
-      :id="`${id}-bottom`"
+      :id="TaskGeneratorHandles.output(id)"
       type="source"
       :position="Position.Bottom"
       class="node-handle source-handle"
@@ -45,6 +33,7 @@
 <script setup lang="ts">
 import { Handle, Position } from "@vue-flow/core";
 import type { NodeData } from "../types";
+import { TaskGeneratorHandles } from "@/composables/workflowApplication/handleIdUtils";
 
 interface Props {
   id: string;

@@ -2,7 +2,7 @@
   <div class="parallel-node">
     <!-- 输入连接点（顶部） -->
     <Handle
-      :id="`${id}-input`"
+      :id="ParallelHandles.input(id)"
       type="target"
       :position="Position.Top"
       class="node-handle input-handle"
@@ -25,19 +25,10 @@
       </span>
     </div>
 
-    <!-- 主输出连接点（右侧，用于 next_node） -->
-    <!-- <Handle
-      :id="`${id}-next`"
-      type="source"
-      :position="Position.Right"
-      class="node-handle next-handle"
-    /> -->
-
     <!-- 并行子节点连接点（底部） -->
-    <!-- 使用 thread.id 作为 handle ID，而不是 index -->
     <Handle
       v-for="(thread, index) in parallelThreads"
-      :id="`${id}-parallel-${thread.id}`"
+      :id="ParallelHandles.thread(id, thread.id)"
       :key="thread.id"
       type="source"
       :position="Position.Bottom"
@@ -51,6 +42,7 @@
 import { computed } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import type { NodeData } from "../types";
+import { ParallelHandles } from "@/composables/workflowApplication/handleIdUtils";
 
 interface Props {
   id: string;
