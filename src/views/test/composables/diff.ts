@@ -1,6 +1,14 @@
 import { NodeTypeEnum } from "../components/types";
 import type { Node, Edge } from "@vue-flow/core";
 
+export type Snapshot = {
+  nodes: Map<string, Node>;
+  edges: Map<string, Edge>;
+  nodeHashes: Map<string, string>;
+  edgeHashes: Map<string, string>;
+  viewport?: { x: number; y: number; zoom: number };
+};
+
 /**
  * 简单的字符串 hash 函数（使用 djb2 算法）
  */
@@ -319,4 +327,78 @@ export const getEdgeFieldChanges = (
   }
 
   return hasChanges ? { changedFields, changes } : null;
+};
+
+/**
+ * 计算当前工作流的 diff
+ */
+export const calculateWorkflowDiff = (
+  currentNodes: Node[],
+  currentEdges: Edge[],
+  snapshot: Snapshot
+) => {
+  const diff = {
+    nodes: {
+      created: [] as Node[],
+      updated: [] as Node[],
+      deleted: [] as string[]
+    },
+    edges: {
+      created: [] as Edge[],
+      updated: [] as Edge[],
+      deleted: [] as string[]
+    }
+  };
+
+  // 计算节点的 diff
+  const currentNodeIds = new Set(currentNodes.map(n => n.id));
+  const snapshotNodeIds = new Set(snapshot.nodes.keys());
+
+  // 新增的节点
+  for (const node of currentNodes) {
+    if (!snapshot.nodes.has(node.id)) {
+      diff.nodes.created.push(node);
+    } else {
+      // 检查是否更新
+      const nodeHash = getNodeHash(currentEdges, node);
+      const snapshotHash = snapshot.nodeHashes.get(node.id);
+      if (nodeHash !== snapshotHash) {
+        diff.nodes.updated.push(node);
+      }
+    }
+  }
+
+  // 删除的节点
+  for (const nodeId of snapshotNodeIds) {
+    if (!currentNodeIds.has(nodeId)) {
+      diff.nodes.deleted.push(nodeId);
+    }
+  }
+
+  // 计算边的 diff
+  const currentEdgeIds = new Set(currentEdges.map(e => e.id));
+  const snapshotEdgeIds = new Set(snapshot.edges.keys());
+
+  // 新增的边
+  for (const edge of currentEdges) {
+    if (!snapshot.edges.has(edge.id)) {
+      diff.edges.created.push(edge);
+    } else {
+      // 检查是否更新
+      const edgeHash = getEdgeHash(edge);
+      const snapshotHash = snapshot.edgeHashes.get(edge.id);
+      if (edgeHash !== snapshotHash) {
+        diff.edges.updated.push(edge);
+      }
+    }
+  }
+
+  // 删除的边
+  for (const edgeId of snapshotEdgeIds) {
+    if (!currentEdgeIds.has(edgeId)) {
+      diff.edges.deleted.push(edgeId);
+    }
+  }
+
+  return diff;
 };

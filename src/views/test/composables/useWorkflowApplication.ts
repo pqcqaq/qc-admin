@@ -42,10 +42,12 @@ import { useWorkflow } from "./useWorkflow";
 import { NodeTypeEnum } from "../components/types";
 import {
   calculateBranchNodesFromNode,
+  calculateWorkflowDiff,
   getEdgeFieldChanges,
   getEdgeHash,
   getNodeFieldChanges,
-  getNodeHash
+  getNodeHash,
+  type Snapshot
 } from "./diff";
 
 const threshold = 0.1;
@@ -171,13 +173,7 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
   const realtimeTimer: Ref<ReturnType<typeof setInterval> | null> = ref(null);
 
   // Snapshot：保存加载时的节点和边状态，用于 diff
-  const snapshot = ref<{
-    nodes: Map<string, Node>;
-    edges: Map<string, Edge>;
-    nodeHashes: Map<string, string>; // 节点业务数据的 hash
-    edgeHashes: Map<string, string>; // 边业务数据的 hash
-    viewport?: { x: number; y: number; zoom: number }; // 初始视口状态
-  }>({
+  const snapshot = ref<Snapshot>({
     nodes: new Map(),
     edges: new Map(),
     nodeHashes: new Map(),
@@ -1038,79 +1034,6 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
   };
 
   /**
-   * 计算当前工作流的 diff
-   */
-  const calculateWorkflowDiff = () => {
-    const currentNodes = workflow.getAllNodes();
-    const currentEdges = workflow.getAllEdges();
-
-    const diff = {
-      nodes: {
-        created: [] as Node[],
-        updated: [] as Node[],
-        deleted: [] as string[]
-      },
-      edges: {
-        created: [] as Edge[],
-        updated: [] as Edge[],
-        deleted: [] as string[]
-      }
-    };
-
-    // 计算节点的 diff
-    const currentNodeIds = new Set(currentNodes.map(n => n.id));
-    const snapshotNodeIds = new Set(snapshot.value.nodes.keys());
-
-    // 新增的节点
-    for (const node of currentNodes) {
-      if (!snapshot.value.nodes.has(node.id)) {
-        diff.nodes.created.push(node);
-      } else {
-        // 检查是否更新
-        const nodeHash = getNodeHash(currentEdges, node);
-        const snapshotHash = snapshot.value.nodeHashes.get(node.id);
-        if (nodeHash !== snapshotHash) {
-          diff.nodes.updated.push(node);
-        }
-      }
-    }
-
-    // 删除的节点
-    for (const nodeId of snapshotNodeIds) {
-      if (!currentNodeIds.has(nodeId)) {
-        diff.nodes.deleted.push(nodeId);
-      }
-    }
-
-    // 计算边的 diff
-    const currentEdgeIds = new Set(currentEdges.map(e => e.id));
-    const snapshotEdgeIds = new Set(snapshot.value.edges.keys());
-
-    // 新增的边
-    for (const edge of currentEdges) {
-      if (!snapshot.value.edges.has(edge.id)) {
-        diff.edges.created.push(edge);
-      } else {
-        // 检查是否更新
-        const edgeHash = getEdgeHash(edge);
-        const snapshotHash = snapshot.value.edgeHashes.get(edge.id);
-        if (edgeHash !== snapshotHash) {
-          diff.edges.updated.push(edge);
-        }
-      }
-    }
-
-    // 删除的边
-    for (const edgeId of snapshotEdgeIds) {
-      if (!currentEdgeIds.has(edgeId)) {
-        diff.edges.deleted.push(edgeId);
-      }
-    }
-
-    return diff;
-  };
-
-  /**
    * 启动实时模式
    */
   const startRealtimeMode = () => {
@@ -1122,7 +1045,11 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
     realtimeMode.value = true;
 
     realtimeTimer.value = setInterval(() => {
-      const diff = calculateWorkflowDiff();
+      const diff = calculateWorkflowDiff(
+        workflow.getAllNodes(),
+        workflow.getAllEdges(),
+        snapshot.value
+      );
 
       // 检查是否有变更
       const hasChanges =
