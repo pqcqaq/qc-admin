@@ -29,6 +29,16 @@
           @change="handleRealtimeModeChange"
         />
       </div>
+      <el-button-group>
+        <el-button :disabled="!canUndo" @click="handleUndo">
+          <el-icon><RefreshLeft /></el-icon>
+          撤销
+        </el-button>
+        <el-button :disabled="!canRedo" @click="handleRedo">
+          <el-icon><RefreshRight /></el-icon>
+          恢复
+        </el-button>
+      </el-button-group>
       <el-button
         type="success"
         :loading="saving"
@@ -46,7 +56,9 @@
 import {
   ArrowLeft,
   DocumentChecked,
-  WarningFilled
+  WarningFilled,
+  RefreshLeft,
+  RefreshRight
 } from "@element-plus/icons-vue";
 
 // Props
@@ -57,6 +69,8 @@ interface Props {
   darkMode?: boolean;
   realtimeMode?: boolean;
   loading?: boolean;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
@@ -64,7 +78,9 @@ withDefaults(defineProps<Props>(), {
   saving: false,
   darkMode: false,
   realtimeMode: false,
-  loading: false
+  loading: false,
+  canUndo: false,
+  canRedo: false
 });
 
 // Emits
@@ -72,6 +88,8 @@ const emit = defineEmits<{
   back: [];
   save: [];
   "toggle-realtime": [enabled: boolean];
+  undo: [];
+  redo: [];
 }>();
 
 // 事件处理
@@ -85,6 +103,14 @@ function handleSave() {
 
 function handleRealtimeModeChange(enabled: boolean) {
   emit("toggle-realtime", enabled);
+}
+
+function handleUndo() {
+  emit("undo");
+}
+
+function handleRedo() {
+  emit("redo");
 }
 </script>
 

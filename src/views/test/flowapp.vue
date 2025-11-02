@@ -31,9 +31,13 @@
           :dark-mode="darkMode"
           :realtime-mode="realtimeMode"
           :loading="loading"
+          :can-undo="canUndo"
+          :can-redo="canRedo"
           @back="handleBackToList"
           @save="handleSaveWorkflow"
           @toggle-realtime="toggleRealtimeMode"
+          @undo="handleUndo"
+          @redo="handleRedo"
         />
         <WorkflowEditor v-model:dark-mode="darkMode" :workflow="workflow" />
       </div>
@@ -81,6 +85,10 @@ const {
   saveWorkflow,
   toggleRealtimeMode,
   saveViewportIfChanged,
+  canUndo,
+  canRedo,
+  undo,
+  redo,
   workflow
 } = workflowApp;
 
@@ -195,6 +203,14 @@ async function handleBackToList() {
 
 async function handleSaveWorkflow() {
   await saveWorkflow();
+}
+
+async function handleUndo() {
+  await undo();
+}
+
+async function handleRedo() {
+  await redo();
 }
 
 async function handlePageChange(page: number) {

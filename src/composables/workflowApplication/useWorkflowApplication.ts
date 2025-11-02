@@ -24,14 +24,16 @@ import {
   cloneWorkflowApplication,
   getWorkflowNodesByApplicationId,
   getWorkflowEdgesByApplicationId,
-  batchSaveWorkflow
+  batchSaveWorkflow,
+  getWorkflowVersionsWithPagination
 } from "qc-admin-api-common/workflow";
 import type {
   WorkflowApplicationResponse,
   CreateWorkflowApplicationRequest,
   UpdateWorkflowApplicationRequest,
   WorkflowNodeResponse,
-  WorkflowEdgeResponse
+  WorkflowEdgeResponse,
+  WorkflowVersionResponse
 } from "qc-admin-api-common/workflow";
 import {
   useWorkflow,
@@ -224,6 +226,12 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
   const realtimeMode = ref(false);
   const realtimeTimer: Ref<ReturnType<typeof setInterval> | null> = ref(null);
 
+  // 版本管理状态
+  const versionCache = ref<Map<string, WorkflowVersionResponse>>(new Map()); // 版本缓存：versionId -> version
+  const currentVersionId = ref<string>(""); // 当前版本ID（空字符串表示最新的未保存状态）
+  const latestVersionNumber = ref<number>(0); // 最新版本号
+  const totalVersions = ref<number>(0); // 总版本数
+
   // Snapshot：保存加载时的节点和边状态，用于 diff
   const snapshot = ref<Snapshot>({
     nodes: new Map(),
@@ -298,6 +306,24 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
 
     // 所有检查都通过，没有未保存的更改
     return false;
+  });
+
+  // Undo/Redo 相关计算属性
+  const canUndo = computed(() => {
+    // 可以 Undo：当前在最新状态（未加载任何版本）或者当前版本号 > 1
+    if (currentVersionId.value === "") {
+      // 在最新状态，可以撤销到最新版本
+      return totalVersions.value > 0;
+    } else {
+      // 在某个版本，可以撤销到更旧的版本
+      const currentVersion = versionCache.value.get(currentVersionId.value);
+      return currentVersion ? currentVersion.version > 1 : false;
+    }
+  });
+
+  const canRedo = computed(() => {
+    // 可以 Redo：当前在某个版本（不是最新状态）
+    return currentVersionId.value !== "";
   });
 
   /**
@@ -460,7 +486,13 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
 
       debugLog("应用加载", "✅ 数据导入完成");
 
-      // 8. 设置当前应用
+      // 8. 加载版本元数据
+      await loadVersionMetadata(applicationId);
+
+      // 9. 重置当前版本ID（表示在最新状态）
+      currentVersionId.value = "";
+
+      // 10. 设置当前应用
       currentApplication.value = appData;
 
       debugLog("应用加载", "✅ 应用加载完成");
@@ -470,6 +502,267 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
     } finally {
       loading.value = false;
     }
+  };
+
+  /**
+   * 加载版本元数据（只加载第一页以获取总数和最新版本号）
+   */
+  const loadVersionMetadata = async (applicationId: string) => {
+    try {
+      const result = await getWorkflowVersionsWithPagination({
+        applicationId,
+        page: 1,
+        pageSize: 1,
+        order: "desc",
+        orderBy: "version"
+      });
+
+      if (result.success && result.data && result.pagination) {
+        totalVersions.value = result.pagination.total;
+        if (result.data.length > 0) {
+          latestVersionNumber.value = result.data[0].version;
+          // 缓存最新版本
+          versionCache.value.set(result.data[0].id, result.data[0]);
+        }
+        debugLog(
+          "版本管理",
+          `✅ 加载版本元数据: 总共 ${totalVersions.value} 个版本，最新版本号: ${latestVersionNumber.value}`
+        );
+      } else {
+        totalVersions.value = 0;
+        latestVersionNumber.value = 0;
+      }
+    } catch (error: any) {
+      debugLog("版本管理", "❌ 加载版本元数据失败", error);
+      totalVersions.value = 0;
+      latestVersionNumber.value = 0;
+    }
+  };
+
+  /**
+   * 按需加载指定版本号的版本数据
+   */
+  const loadVersionByNumber = async (
+    applicationId: string,
+    versionNumber: number
+  ): Promise<WorkflowVersionResponse | null> => {
+    try {
+      // 先检查缓存
+      const cached = Array.from(versionCache.value.values()).find(
+        v => v.version === versionNumber
+      );
+      if (cached) {
+        debugLog("版本管理", `✅ 从缓存加载版本 ${versionNumber}`);
+        return cached;
+      }
+
+      // 从服务器加载
+      debugLog("版本管理", `开始从服务器加载版本 ${versionNumber}`);
+      const result = await getWorkflowVersionsWithPagination({
+        applicationId,
+        version: versionNumber,
+        page: 1,
+        pageSize: 1
+      });
+
+      if (result.success && result.data && result.data.length > 0) {
+        const version = result.data[0];
+        // 缓存版本
+        versionCache.value.set(version.id, version);
+        debugLog("版本管理", `✅ 从服务器加载版本 ${versionNumber} 成功`);
+        return version;
+      } else {
+        debugLog("版本管理", `❌ 版本 ${versionNumber} 不存在`);
+        return null;
+      }
+    } catch (error: any) {
+      debugLog("版本管理", `❌ 加载版本 ${versionNumber} 失败`, error);
+      return null;
+    }
+  };
+
+  /**
+   * 从版本快照加载工作流
+   * 注意：不更新 snapshot，这样用户可以保存修改
+   */
+  const loadFromVersion = async (version: WorkflowVersionResponse) => {
+    if (!currentApplication.value) {
+      ElMessage.error("请先选择或创建一个应用");
+      return false;
+    }
+
+    try {
+      loading.value = true;
+      debugLog("版本管理", `开始加载版本 ${version.version}`);
+
+      // 解析快照数据
+      const snapshotData = version.snapshot;
+      if (!snapshotData || !snapshotData.nodes || !snapshotData.edges) {
+        throw new Error("版本快照数据无效");
+      }
+
+      // 清空画布
+      workflow.clearCanvas(true);
+
+      // 等待清空完成
+      await nextTick();
+
+      // 转换节点数据
+      const nodes: Node[] = snapshotData.nodes.map(
+        convertNodeResponseToVueFlowNode
+      );
+      const edges: Edge[] = snapshotData.edges.map(
+        convertEdgeResponseToVueFlowEdge
+      );
+
+      debugLog(
+        "版本管理",
+        `加载版本数据: ${nodes.length} 个节点, ${edges.length} 条边`
+      );
+
+      // 导入数据到画布
+      workflow.importData({ nodes, edges }, true);
+
+      // 等待 Vue Flow 完成数据导入
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // ✅ 不更新 snapshot！
+      // snapshot 保持最初加载应用时的状态
+      // 这样 hasUnsavedChanges 会正确显示为 true
+      // 用户可以保存修改，创建新版本
+
+      // 设置当前版本ID
+      currentVersionId.value = version.id;
+
+      debugLog(
+        "版本管理",
+        `✅ 版本 ${version.version} 加载完成（snapshot 未更新）`
+      );
+      ElMessage.success(`已加载版本 ${version.version}，可以编辑并保存`);
+      return true;
+    } catch (error: any) {
+      debugLog("版本管理", "❌ 加载版本失败", error);
+      ElMessage.error(error.message || "加载版本失败");
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  /**
+   * Undo - 撤销到上一个版本
+   */
+  const undo = async () => {
+    if (!canUndo.value || !currentApplication.value) {
+      ElMessage.warning("没有可撤销的版本");
+      return false;
+    }
+
+    // 如果有未保存的更改，提示用户
+    if (hasUnsavedChanges.value) {
+      try {
+        await ElMessageBox.confirm(
+          "当前有未保存的更改，撤销操作将丢失这些更改。是否继续？",
+          "警告",
+          {
+            confirmButtonText: "继续",
+            cancelButtonText: "取消",
+            type: "warning"
+          }
+        );
+      } catch {
+        return false;
+      }
+    }
+
+    // 确定要加载的版本号
+    let targetVersionNumber: number;
+    if (currentVersionId.value === "") {
+      // 当前在最新状态，撤销到最新版本
+      targetVersionNumber = latestVersionNumber.value;
+    } else {
+      // 当前在某个版本，撤销到上一个版本
+      const currentVersion = versionCache.value.get(currentVersionId.value);
+      if (!currentVersion || currentVersion.version <= 1) {
+        ElMessage.warning("已经是最旧的版本");
+        return false;
+      }
+      targetVersionNumber = currentVersion.version - 1;
+    }
+
+    // 加载目标版本
+    const targetVersion = await loadVersionByNumber(
+      currentApplication.value.id,
+      targetVersionNumber
+    );
+    if (!targetVersion) {
+      ElMessage.error("加载版本失败");
+      return false;
+    }
+
+    const success = await loadFromVersion(targetVersion);
+    if (success) {
+      debugLog("版本管理", `✅ Undo 成功，当前版本: ${targetVersionNumber}`);
+    }
+    return success;
+  };
+
+  /**
+   * Redo - 恢复到下一个版本或最新状态
+   */
+  const redo = async () => {
+    if (!canRedo.value || !currentApplication.value) {
+      ElMessage.warning("没有可恢复的版本");
+      return false;
+    }
+
+    // 如果有未保存的更改，提示用户
+    if (hasUnsavedChanges.value) {
+      try {
+        await ElMessageBox.confirm(
+          "当前有未保存的更改，恢复操作将丢失这些更改。是否继续？",
+          "警告",
+          {
+            confirmButtonText: "继续",
+            cancelButtonText: "取消",
+            type: "warning"
+          }
+        );
+      } catch {
+        return false;
+      }
+    }
+
+    const currentVersion = versionCache.value.get(currentVersionId.value);
+    if (!currentVersion) {
+      return false;
+    }
+
+    // 如果当前版本是最新版本，恢复到最新状态（重新加载应用）
+    if (currentVersion.version === latestVersionNumber.value) {
+      debugLog("版本管理", "恢复到最新状态，重新加载应用");
+      workflow.clearCanvas(true);
+      await loadApplication(currentApplication.value.id);
+      ElMessage.success("已恢复到最新状态");
+      return true;
+    }
+
+    // 否则，恢复到下一个版本
+    const targetVersionNumber = currentVersion.version + 1;
+    const targetVersion = await loadVersionByNumber(
+      currentApplication.value.id,
+      targetVersionNumber
+    );
+    if (!targetVersion) {
+      ElMessage.error("加载版本失败");
+      return false;
+    }
+
+    const success = await loadFromVersion(targetVersion);
+    if (success) {
+      debugLog("版本管理", `✅ Redo 成功，当前版本: ${targetVersionNumber}`);
+    }
+    return success;
   };
 
   /**
@@ -1103,6 +1396,12 @@ export function useWorkflowApplication(vueFlowId: string = "workflow-canvas") {
 
     // 视口管理方法
     saveViewportIfChanged,
+
+    // 版本管理方法
+    canUndo,
+    canRedo,
+    undo,
+    redo,
 
     // 暴露 workflow 实例
     workflow
