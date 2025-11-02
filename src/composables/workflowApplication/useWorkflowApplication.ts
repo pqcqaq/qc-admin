@@ -71,19 +71,23 @@ function convertNodeResponseToVueFlowNode(node: WorkflowNodeResponse): Node {
     data: {
       label: node.name,
       description: node.description,
-      config: node.config,
       prompt: node.prompt,
       processorLanguage: node.processorLanguage,
       processorCode: node.processorCode,
       apiConfig: node.apiConfig,
       parallelConfig: node.parallelConfig,
       branchNodes: node.branchNodes, // 直接使用 branchNodes
+      llmConfig: node.llmConfig,
+      loopConfig: node.loopConfig,
       workflowApplicationId: node.workflowApplicationId, // 直接使用 workflowApplicationId
       async: node.async,
       timeout: node.timeout,
       retryCount: node.retryCount,
       color: node.color
-    }
+    },
+    draggable: true,
+    connectable: true,
+    selectable: true
   };
 }
 

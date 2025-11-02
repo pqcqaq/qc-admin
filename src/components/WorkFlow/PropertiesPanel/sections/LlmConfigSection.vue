@@ -129,9 +129,9 @@ const emit = defineEmits<{
   updateData: [key: string, value: any];
 }>();
 
-// LLM 配置对象（存储在 config 中）
+// LLM 配置对象（存储在 llmConfig 中）
 const llmConfig = computed(() => {
-  return props.node.data.config || {};
+  return props.node.data.llmConfig || {};
 });
 
 // 更新节点数据
@@ -145,7 +145,7 @@ const updateLlmConfig = (key: string, value: any) => {
     ...llmConfig.value,
     [key]: value
   };
-  emit("updateData", "config", newConfig);
+  emit("updateData", "llmConfig", newConfig);
 };
 </script>
 

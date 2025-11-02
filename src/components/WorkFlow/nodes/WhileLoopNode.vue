@@ -16,13 +16,13 @@
       <div v-if="data.description" class="node-description">
         {{ data.description }}
       </div>
-      <div v-if="data.config?.condition" class="node-info">
+      <div v-if="data.loopConfig?.condition" class="node-info">
         <span class="info-label">条件:</span>
-        <span class="info-value">{{ data.config.condition }}</span>
+        <span class="info-value">{{ data.loopConfig.condition }}</span>
       </div>
-      <div v-if="data.config?.maxIterations" class="node-info">
+      <div v-if="data.loopConfig?.maxIterations" class="node-info">
         <span class="info-label">最大迭代:</span>
-        <span class="info-value">{{ data.config.maxIterations }}</span>
+        <span class="info-value">{{ data.loopConfig.maxIterations }}</span>
       </div>
     </div>
 

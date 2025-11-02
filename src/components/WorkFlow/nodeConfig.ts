@@ -135,7 +135,7 @@ export const nodeTemplates: NodeTemplate[] = [
       label: "循环",
       description: "",
       color: "#fa709a",
-      config: {
+      loopConfig: {
         condition: "",
         maxIterations: 100
       }
@@ -151,7 +151,7 @@ export const nodeTemplates: NodeTemplate[] = [
       description: "",
       color: "#a8edea",
       prompt: "",
-      config: {
+      llmConfig: {
         model: "gpt-3.5-turbo",
         temperature: 0.7
       }
@@ -166,7 +166,6 @@ export const nodeTemplates: NodeTemplate[] = [
       label: "工作流",
       description: "",
       color: "#667eea",
-      config: {},
       workflowApplicationId: ""
     }
   }

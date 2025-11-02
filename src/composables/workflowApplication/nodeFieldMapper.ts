@@ -58,11 +58,6 @@ const FIELD_MAPPING_METADATA: FieldMappingConfig[] = [
     backendKey: "description",
     defaultValue: ""
   },
-  {
-    frontendPath: "data.config",
-    backendKey: "config",
-    defaultValue: {}
-  },
 
   // ========== 位置字段（特殊处理：需要拆分为 positionX 和 positionY） ==========
   {
@@ -98,6 +93,14 @@ const FIELD_MAPPING_METADATA: FieldMappingConfig[] = [
   {
     frontendPath: "data.branchNodes",
     backendKey: "branchNodes"
+  },
+  {
+    frontendPath: "data.llmConfig",
+    backendKey: "llmConfig"
+  },
+  {
+    frontendPath: "data.loopConfig",
+    backendKey: "loopConfig"
   },
   {
     frontendPath: "data.workflowApplicationId",
@@ -179,8 +182,6 @@ export const mapNodeToCreateRequest = (
         value = node.id;
       } else if (config.backendKey === "type") {
         value = node.type;
-      } else if (config.backendKey === "config") {
-        value = {};
       }
     }
 

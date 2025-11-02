@@ -18,17 +18,17 @@
       <div v-if="data.description" class="node-description">
         {{ data.description }}
       </div>
-      <div v-if="data.config?.model" class="node-info">
+      <div v-if="data.llmConfig?.model" class="node-info">
         <span class="info-label">模型</span>
-        <span class="info-value">{{ data.config.model }}</span>
+        <span class="info-value">{{ data.llmConfig.model }}</span>
       </div>
       <div v-if="data.prompt" class="node-info">
         <span class="info-label">提示词</span>
         <span class="info-value">{{ promptPreview }}</span>
       </div>
-      <div v-if="data.config?.temperature !== undefined" class="node-info">
+      <div v-if="data.llmConfig?.temperature !== undefined" class="node-info">
         <span class="info-label">温度</span>
-        <span class="info-value">{{ data.config.temperature }}</span>
+        <span class="info-value">{{ data.llmConfig.temperature }}</span>
       </div>
     </div>
 

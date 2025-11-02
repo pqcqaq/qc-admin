@@ -81,12 +81,13 @@ export interface NodeData {
   label: string; // 节点名称
   description?: string; // 节点描述
   prompt?: string; // 提示词（LLM节点）
-  config?: Record<string, any>; // 节点配置
   processorLanguage?: string; // 处理器语言
   processorCode?: string; // 代码处理器
   apiConfig?: Record<string, any>; // API配置
   parallelConfig?: ParallelConfig; // 并行配置（会保存到数据库）
   branchNodes?: Record<string, BranchConfig>; // 分支配置（判断节点，会保存到数据库）
+  llmConfig?: Record<string, any>; // LLM配置（llm_caller节点）
+  loopConfig?: Record<string, any>; // 循环配置（while_loop节点）
   parallelChildren?: ParallelChildConfig[]; // 并行子节点配置（并行节点，仅用于 UI，不保存到数据库）
   workflowApplicationId?: string; // 引用的工作流应用ID（workflow节点专用）
   async?: boolean; // 是否异步执行
