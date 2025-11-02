@@ -59,7 +59,6 @@ defineProps<Props>();
 
   &:hover {
     box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
-    transform: translateY(-2px);
   }
 }
 

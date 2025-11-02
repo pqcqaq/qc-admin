@@ -37,7 +37,7 @@ export enum HandleType {
   // ========== 并行执行器 (PARALLEL_EXECUTOR) ==========
   PARALLEL_EXECUTOR_INPUT = "parallel_executor_input", // 并行执行器的输入
   PARALLEL_THREAD_OUTPUT = "parallel_thread_output", // 并行执行器的线程输出（连接到子任务）
-  PARALLEL_CHILD_INPUT = "parallel_child_input", // 并行子任务的输入（接收来自并行执行器的连接）
+  // PARALLEL_CHILD_INPUT = "parallel_child_input", // 并行子任务的输入（接收来自并行执行器的连接）
 
   // ========== API调用器 (API_CALLER) ==========
   API_CALLER_INPUT = "api_caller_input", // API调用器的输入
@@ -161,13 +161,23 @@ export const HANDLE_COMPATIBILITY: Record<
 
   // ========== 并行线程输出 (PARALLEL_THREAD_OUTPUT) ==========
   [HandleType.PARALLEL_THREAD_OUTPUT]: {
-    [HandleType.PARALLEL_CHILD_INPUT]: true // ✅ 并行线程 → 并行子任务（专用连接）
+    // [HandleType.PARALLEL_CHILD_INPUT]: true // ✅ 并行线程 → 并行子任务（专用连接）
+    [HandleType.LLM_CALLER_INPUT]: true, // ✅ 并行线程 → LLM调用器
+    [HandleType.WORKFLOW_INPUT]: true, // ✅ 并行线程 → 工作流节点
+    // [HandleType.END_INPUT]: false, // ✅ 并行线程 → 结束
+    [HandleType.COMMON_INPUT]: true, // ✅ 并行线程 → 通用输入
+    [HandleType.TASK_GENERATOR_INPUT]: true, // ✅ 并行线程 → 任务生成器
+    [HandleType.CONDITION_INPUT]: true, // ✅ 并行线程 → 条件检查器
+    [HandleType.PARALLEL_EXECUTOR_INPUT]: true, // ✅ 并行线程 → 并行执行器
+    [HandleType.API_CALLER_INPUT]: true, // ✅ 并行线程 → API调用器
+    [HandleType.DATA_PROCESSOR_INPUT]: true, // ✅ 并行线程 → 数据处理器
+    [HandleType.LOOP_INPUT]: true // ✅ 并行线程 → 循环节点
   },
 
   // ========== 并行子任务输入 (PARALLEL_CHILD_INPUT) ==========
-  [HandleType.PARALLEL_CHILD_INPUT]: {
-    // 输入不能作为源连接点
-  },
+  // [HandleType.PARALLEL_CHILD_INPUT]: {
+  //   // 输入不能作为源连接点
+  // },
 
   // ========== API调用器输入 (API_CALLER_INPUT) ==========
   [HandleType.API_CALLER_INPUT]: {
@@ -529,7 +539,7 @@ export const HANDLE_TYPE_LABELS: Record<HandleType, string> = {
   // 并行执行器
   [HandleType.PARALLEL_EXECUTOR_INPUT]: "并行执行器输入",
   [HandleType.PARALLEL_THREAD_OUTPUT]: "并行线程输出",
-  [HandleType.PARALLEL_CHILD_INPUT]: "并行子任务输入",
+  // [HandleType.PARALLEL_CHILD_INPUT]: "并行子任务输入",
 
   // API调用器
   [HandleType.API_CALLER_INPUT]: "API调用器输入",
@@ -637,10 +647,10 @@ export const HANDLE_CONNECTION_LIMITS: Record<
     maxOutputConnections: 1 // 每个并行线程只能连接一个子任务
   },
 
-  [HandleType.PARALLEL_CHILD_INPUT]: {
-    maxInputConnections: 1, // 并行子任务只能接受一个来自并行执行器的连接
-    maxOutputConnections: 0
-  },
+  // [HandleType.PARALLEL_CHILD_INPUT]: {
+  //   maxInputConnections: 1, // 并行子任务只能接受一个来自并行执行器的连接
+  //   maxOutputConnections: 0
+  // },
 
   // ========== API调用器 ==========
   [HandleType.API_CALLER_INPUT]: {

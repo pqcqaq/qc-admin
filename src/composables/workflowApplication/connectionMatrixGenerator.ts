@@ -33,7 +33,7 @@ const ALL_HANDLE_TYPES = [
   // 并行执行器
   HandleType.PARALLEL_EXECUTOR_INPUT,
   HandleType.PARALLEL_THREAD_OUTPUT,
-  HandleType.PARALLEL_CHILD_INPUT,
+  // HandleType.PARALLEL_CHILD_INPUT,
 
   // API调用器
   HandleType.API_CALLER_INPUT,
@@ -77,7 +77,7 @@ const HANDLE_TYPE_SHORT_LABELS: Partial<Record<HandleType, string>> = {
   // 并行执行器
   [HandleType.PARALLEL_EXECUTOR_INPUT]: "并行入",
   [HandleType.PARALLEL_THREAD_OUTPUT]: "线程出",
-  [HandleType.PARALLEL_CHILD_INPUT]: "子任务入",
+  // [HandleType.PARALLEL_CHILD_INPUT]: "子任务入",
 
   // API调用器
   [HandleType.API_CALLER_INPUT]: "API入",

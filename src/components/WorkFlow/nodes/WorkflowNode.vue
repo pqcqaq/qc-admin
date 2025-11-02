@@ -80,7 +80,6 @@ const workflowApplicationName = computed(() => {
 
   &:hover {
     box-shadow: 0 6px 12px rgb(0 0 0 / 15%);
-    transform: translateY(-2px);
   }
 
   .node-header {

@@ -321,73 +321,168 @@ export const getEdgeFieldChanges = (
 };
 
 /**
- * 计算当前工作流的 diff
+ * 判断 ID 是否为数据库 ID（纯数字字符串）
+ */
+const isDatabaseId = (id: string): boolean => {
+  return /^\d+$/.test(id);
+};
+
+/**
+ * 工作流 Diff 结果（包含详细的字段变更信息）
+ */
+export interface WorkflowDiffResult {
+  nodes: {
+    created: Array<{
+      node: Node;
+      tempId: string;
+    }>;
+    updated: Array<{
+      node: Node;
+      changedFields: string[];
+    }>;
+    deleted: string[];
+  };
+  edges: {
+    created: Array<{
+      edge: Edge;
+      tempId: string;
+    }>;
+    updated: Array<{
+      edge: Edge;
+      changedFields: string[];
+    }>;
+    deleted: string[];
+  };
+}
+
+/**
+ * 计算当前工作流的详细 diff（用于保存和实时同步）
+ *
+ * 这个方法会：
+ * 1. 识别新增、修改、删除的节点和边
+ * 2. 对于修改的节点和边，计算具体变更的字段
+ * 3. 区分临时 ID 和数据库 ID
+ *
+ * @param currentNodes 当前画布上的所有节点
+ * @param currentEdges 当前画布上的所有边
+ * @param snapshot 快照数据（用于对比）
+ * @returns 详细的 diff 结果
  */
 export const calculateWorkflowDiff = (
   currentNodes: Node[],
   currentEdges: Edge[],
   snapshot: Snapshot
-) => {
-  const diff = {
+): WorkflowDiffResult => {
+  const diff: WorkflowDiffResult = {
     nodes: {
-      created: [] as Node[],
-      updated: [] as Node[],
-      deleted: [] as string[]
+      created: [],
+      updated: [],
+      deleted: []
     },
     edges: {
-      created: [] as Edge[],
-      updated: [] as Edge[],
-      deleted: [] as string[]
+      created: [],
+      updated: [],
+      deleted: []
     }
   };
 
-  // 计算节点的 diff
-  const currentNodeIds = new Set(currentNodes.map(n => n.id));
-  const snapshotNodeIds = new Set(snapshot.nodes.keys());
+  // ========== 计算节点的 diff ==========
+  const currentNodeMap = new Map(currentNodes.map(n => [n.id, n]));
 
-  // 新增的节点
+  // 找出新增和修改的节点
   for (const node of currentNodes) {
-    if (!snapshot.nodes.has(node.id)) {
-      diff.nodes.created.push(node);
+    // 首先检查 ID 格式：如果不是数据库 ID（纯数字），则一定是新节点
+    if (!isDatabaseId(node.id)) {
+      diff.nodes.created.push({
+        node,
+        tempId: node.id
+      });
+      continue;
+    }
+
+    // 对于数据库 ID，检查 snapshot
+    const snapshotHash = snapshot.nodeHashes.get(node.id);
+    if (!snapshotHash) {
+      // 新增的节点（不在 snapshot 中）
+      diff.nodes.created.push({
+        node,
+        tempId: node.id
+      });
     } else {
-      // 检查是否更新
-      const nodeHash = getNodeHash(currentEdges, node);
-      const snapshotHash = snapshot.nodeHashes.get(node.id);
-      if (nodeHash !== snapshotHash) {
-        diff.nodes.updated.push(node);
+      // 计算当前节点的 hash 并与 snapshot 比较
+      const currentHash = getNodeHash(currentEdges, node);
+      if (currentHash !== snapshotHash) {
+        // 节点有变化，计算具体变更的字段
+        const snapshotNode = snapshot.nodes.get(node.id);
+        if (snapshotNode) {
+          const fieldChangesInfo = getNodeFieldChanges(
+            currentEdges,
+            node,
+            snapshotNode
+          );
+          if (fieldChangesInfo) {
+            diff.nodes.updated.push({
+              node,
+              changedFields: fieldChangesInfo.changedFields
+            });
+          }
+        }
       }
     }
   }
 
-  // 删除的节点
-  for (const nodeId of snapshotNodeIds) {
-    if (!currentNodeIds.has(nodeId)) {
-      diff.nodes.deleted.push(nodeId);
+  // 找出删除的节点
+  for (const [id] of snapshot.nodeHashes) {
+    if (!currentNodeMap.has(id)) {
+      diff.nodes.deleted.push(id);
     }
   }
 
-  // 计算边的 diff
-  const currentEdgeIds = new Set(currentEdges.map(e => e.id));
-  const snapshotEdgeIds = new Set(snapshot.edges.keys());
+  // ========== 计算边的 diff ==========
+  const currentEdgeMap = new Map(currentEdges.map(e => [e.id, e]));
 
-  // 新增的边
+  // 找出新增和修改的边
   for (const edge of currentEdges) {
-    if (!snapshot.edges.has(edge.id)) {
-      diff.edges.created.push(edge);
+    // 首先检查 ID 格式：如果不是数据库 ID（纯数字），则一定是新边
+    if (!isDatabaseId(edge.id)) {
+      diff.edges.created.push({
+        edge,
+        tempId: edge.id
+      });
+      continue;
+    }
+
+    // 对于数据库 ID，检查 snapshot
+    const snapshotHash = snapshot.edgeHashes.get(edge.id);
+    if (!snapshotHash) {
+      // 新增的边（不在 snapshot 中）
+      diff.edges.created.push({
+        edge,
+        tempId: edge.id
+      });
     } else {
-      // 检查是否更新
-      const edgeHash = getEdgeHash(edge);
-      const snapshotHash = snapshot.edgeHashes.get(edge.id);
-      if (edgeHash !== snapshotHash) {
-        diff.edges.updated.push(edge);
+      // 计算当前边的 hash 并与 snapshot 比较
+      const currentHash = getEdgeHash(edge);
+      if (currentHash !== snapshotHash) {
+        // 边有变化，计算具体变更的字段
+        const snapshotEdge = snapshot.edges.get(edge.id);
+        if (snapshotEdge) {
+          const fieldChangesInfo = getEdgeFieldChanges(edge, snapshotEdge);
+          if (fieldChangesInfo) {
+            diff.edges.updated.push({
+              edge,
+              changedFields: fieldChangesInfo.changedFields
+            });
+          }
+        }
       }
     }
   }
 
-  // 删除的边
-  for (const edgeId of snapshotEdgeIds) {
-    if (!currentEdgeIds.has(edgeId)) {
-      diff.edges.deleted.push(edgeId);
+  // 找出删除的边
+  for (const [id] of snapshot.edgeHashes) {
+    if (!currentEdgeMap.has(id)) {
+      diff.edges.deleted.push(id);
     }
   }
 

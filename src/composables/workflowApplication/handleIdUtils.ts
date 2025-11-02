@@ -204,8 +204,8 @@ export function getHandleTypeFromId(handleId?: string | null): HandleType {
       return HandleType.PARALLEL_EXECUTOR_INPUT;
     case "thread":
       return HandleType.PARALLEL_THREAD_OUTPUT;
-    case "parallel-child-input":
-      return HandleType.PARALLEL_CHILD_INPUT;
+    // case "parallel-child-input":
+    //   return HandleType.PARALLEL_CHILD_INPUT;
 
     // API调用器
     case "api-input":
@@ -265,7 +265,7 @@ export function isInputHandle(handleId: string): boolean {
     HandleType.TASK_GENERATOR_INPUT,
     HandleType.CONDITION_INPUT,
     HandleType.PARALLEL_EXECUTOR_INPUT,
-    HandleType.PARALLEL_CHILD_INPUT,
+    // HandleType.PARALLEL_CHILD_INPUT,
     HandleType.API_CALLER_INPUT,
     HandleType.DATA_PROCESSOR_INPUT,
     HandleType.LOOP_INPUT,

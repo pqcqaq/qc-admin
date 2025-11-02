@@ -71,7 +71,6 @@ const codePreview = computed(() => {
 
   &:hover {
     box-shadow: 0 4px 12px rgb(240 147 251 / 40%);
-    transform: translateY(-2px);
   }
 }
 
